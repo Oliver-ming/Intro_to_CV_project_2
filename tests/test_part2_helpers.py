@@ -8,7 +8,12 @@ from pathlib import Path
 
 import numpy as np
 
-from src.part2.ensure_anomalyclip_metrics import MARKER, ensure_anomalyclip_metrics
+from src.part2.ensure_anomalyclip_metrics import (
+    IMAGE_SCORE_MARKER,
+    MARKER,
+    ensure_anomalyclip_image_scores,
+    ensure_anomalyclip_metrics,
+)
 from src.part2.references import official_reference_names
 from src.part3.patch_maps import patch_distances_to_map
 
@@ -41,6 +46,20 @@ class Part2HelperTest(unittest.TestCase):
             patched = path.read_text(encoding="utf-8")
         self.assertIn(MARKER, patched)
         self.assertIn("metrics.json", patched)
+
+    def test_image_score_hook_writes_one_row_per_image(self) -> None:
+        source = Path("third_party/AnomalyCLIP/test.py").read_text(encoding="utf-8")
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "test.py"
+            path.write_text(source, encoding="utf-8")
+            if MARKER not in source:
+                ensure_anomalyclip_metrics(path)
+            self.assertTrue(ensure_anomalyclip_image_scores(path))
+            self.assertFalse(ensure_anomalyclip_image_scores(path))
+            patched = path.read_text(encoding="utf-8")
+        self.assertIn(IMAGE_SCORE_MARKER, patched)
+        self.assertIn("image_scores.json", patched)
+        self.assertIn("image_score_rows", patched)
 
 
 if __name__ == "__main__":

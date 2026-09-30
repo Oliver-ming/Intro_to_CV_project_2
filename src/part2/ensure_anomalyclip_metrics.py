@@ -59,3 +59,42 @@ def ensure_anomalyclip_metrics(test_py: Path) -> bool:
     text = text.replace(_ANCHOR, _INSERT, 1)
     test_py.write_text(text, encoding="utf-8")
     return True
+
+
+IMAGE_SCORE_MARKER = "PROJECT2_IMAGE_SCORES"
+
+_LOOP_ANCHOR = "    model.to(device)\n    for idx, items in enumerate(tqdm(test_dataloader)):\n"
+_LOOP_INSERT = """    model.to(device)
+    image_score_rows = []
+    for idx, items in enumerate(tqdm(test_dataloader)):
+"""
+
+_PROB_ANCHOR = "            results[cls_name[0]]['pr_sp'].extend(text_probs.detach().cpu())\n"
+_PROB_INSERT = """            results[cls_name[0]]['pr_sp'].extend(text_probs.detach().cpu())
+            image_score_rows.append({
+                "img_path": items["img_path"][0],
+                "detection_score": float(text_probs.detach().cpu().reshape(-1)[0]),
+            })
+"""
+
+_DUMP_ANCHOR = """        json.dump(metric_payload, handle, indent=2)
+"""
+_DUMP_INSERT = """        json.dump(metric_payload, handle, indent=2)
+    # PROJECT2_IMAGE_SCORES: one detection score per test image, for prompt-visual fusion.
+    with open(os.path.join(args.save_path, "image_scores.json"), "w", encoding="utf-8") as handle:
+        json.dump(image_score_rows, handle)
+"""
+
+
+def ensure_anomalyclip_image_scores(test_py: Path) -> bool:
+    """Return True when per-image scores were added."""
+    text = test_py.read_text(encoding="utf-8")
+    if IMAGE_SCORE_MARKER in text:
+        return False
+    if _LOOP_ANCHOR not in text or _PROB_ANCHOR not in text or _DUMP_ANCHOR not in text:
+        raise RuntimeError(f"{test_py} does not match the expected AnomalyCLIP test.py")
+    text = text.replace(_LOOP_ANCHOR, _LOOP_INSERT, 1)
+    text = text.replace(_PROB_ANCHOR, _PROB_INSERT, 1)
+    text = text.replace(_DUMP_ANCHOR, _DUMP_INSERT, 1)
+    test_py.write_text(text, encoding="utf-8")
+    return True

@@ -21,7 +21,10 @@ sys.path.insert(0, "$ROOT")
 from pathlib import Path
 from src.part2.ensure_anomalyclip_metrics import ensure_anomalyclip_metrics
 changed = ensure_anomalyclip_metrics(Path("test.py"))
+from src.part2.ensure_anomalyclip_metrics import ensure_anomalyclip_image_scores
+changed_scores = ensure_anomalyclip_image_scores(Path("test.py"))
 print("anomalyclip metrics hook", "inserted" if changed else "already present")
+print("anomalyclip image scores", "inserted" if changed_scores else "already present")
 PY
 exec > >(tee -a "$LOG") 2>&1
 echo "ANOMALYCLIP_TEST_START $(date -Is)"

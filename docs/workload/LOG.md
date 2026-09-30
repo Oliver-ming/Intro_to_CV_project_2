@@ -136,3 +136,4 @@
 - AUPRO 改为和 MVTec / AnomalyDINO 相同的做法：所有像素按分数排序后一次累加，不再抽 256 个分位点。bottle 的 AUPRO 从近似值 0.8009 变成精确值 0.8010。`python -m src.inspection.collect_tables` 会把已经写好的 Part 1 指标和 AnomalyDINO 的 `metrics_seed` 收成 `outputs/tables/comparison.json`，缺的类别会跳过。当前表里只有 bottle 差分。MVTec AD 2 的公开集仍没有可用的快速镜像，官方归档约 30GB，不重新开始那次过慢的下载。
 - 官方 AnomalyDINO 只给 `test/` 打分。工作点要用的正常验证尾图由 `scripts/score_anomalydino_heldout.py` 按同样的参考图切片补打分，完成标记是 `ANOMALYDINO_HELDOUT_DONE`。单张 bottle 验证图已在 GPU 6 上跑通，参考图是 `000.png`。AnomalyCLIP 的 `test.py` 现在会把未四舍五入的指标写到 `metrics.json`，`collect_tables` 会读它。
 - 自编码器改成和差分并行：`scripts/run_autoencoder.sh` 用 GPU 0，结束标记 `AUTOENCODER_DONE`。已经写过 `scores.json` 的类别会跳过，文件锁避免和 Part 1 脚本里随后那次训练叠在一起。672 的验证图打分在 GPU 7，结束标记 `ANOMALYDINO_HELDOUT_672_DONE`。这轮只查了结束标记，都还没有。
+- 提示分数和视觉距离要对齐到同一条相对路径才能融合。AnomalyDINO 的测量表把测试图记成 `类别/test/缺陷/文件名`。AnomalyCLIP 测试会额外写 `image_scores.json`，每张测试图一个检测分数。验证尾图的分数仍来自补打分。`src/part2/score_files.py` 把两边收成融合脚本能读的分数文件。
