@@ -179,6 +179,95 @@ def collect_efficiency(results_root: Path) -> list[dict]:
     return rows
 
 
+def collect_partial_images(results_root: Path, partial_root: Path) -> list[dict]:
+    """Image AUROC and AP, including seeds whose official file is not written yet.
+
+    Official ``metrics_seed`` wins when both exist. Seed means use only the
+    categories present in every seed, so a half-finished seed does not change
+    the denominator.
+    """
+    grouped: dict[tuple, dict[int, dict[str, dict[str, float]]]] = {}
+
+    def bucket(dataset: str, model: str, shot_dir: str) -> dict[int, dict[str, dict[str, float]]]:
+        return grouped.setdefault((dataset, model, shot_dir), {})
+
+    if results_root.is_dir():
+        for metrics_path in sorted(results_root.glob("results_*/**/metrics_seed=*.json")):
+            shot_dir = metrics_path.parent
+            if _SHOT_DIR.match(shot_dir.name) is None:
+                continue
+            payload = json.loads(metrics_path.read_text(encoding="utf-8"))
+            rows = {}
+            for category, value in payload.items():
+                if isinstance(value, dict) and "classification_AUROC" in value and "classification_AP" in value:
+                    rows[category] = {
+                        "image_auroc": float(value["classification_AUROC"]),
+                        "image_ap": float(value["classification_AP"]),
+                    }
+            if rows:
+                seed = int(metrics_path.stem.split("=", 1)[1])
+                dataset = shot_dir.parent.parent.name.removeprefix("results_")
+                bucket(dataset, shot_dir.parent.name, shot_dir.name)[seed] = rows
+
+    if partial_root.is_dir():
+        for path in sorted(partial_root.glob("*/*/*/*/*.json")):
+            shot_dir = path.parent.parent.name
+            if _SHOT_DIR.match(shot_dir) is None or not path.parent.name.startswith("seed="):
+                continue
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            category = payload.get("category")
+            if not isinstance(category, str) or "image_auroc" not in payload or "image_ap" not in payload:
+                continue
+            seed = int(path.parent.name.split("=", 1)[1])
+            dataset = path.parent.parent.parent.parent.name
+            model = path.parent.parent.parent.name
+            seeds = bucket(dataset, model, shot_dir)
+            if category in seeds.get(seed, {}):
+                continue
+            seeds.setdefault(seed, {})[category] = {
+                "image_auroc": float(payload["image_auroc"]),
+                "image_ap": float(payload["image_ap"]),
+            }
+
+    table = []
+    for (dataset, model, shot_name), seeds in sorted(grouped.items()):
+        match = _SHOT_DIR.match(shot_name)
+        if match is None or not seeds:
+            continue
+        categories: set[str] = set()
+        for rows in seeds.values():
+            categories.update(rows)
+        per_category = {}
+        for category in sorted(categories):
+            metrics = {}
+            for key in ("image_auroc", "image_ap"):
+                values = [rows[category][key] for rows in seeds.values() if category in rows]
+                if values:
+                    metrics[key] = mean_and_std(values)
+            per_category[category] = metrics
+        shared = set.intersection(*(set(rows) for rows in seeds.values()))
+        seed_means = {}
+        if shared:
+            for key in ("image_auroc", "image_ap"):
+                per_seed = [
+                    sum(rows[category][key] for category in shared) / len(shared) for rows in seeds.values()
+                ]
+                seed_means[key] = mean_and_std(per_seed)
+        table.append(
+            {
+                "dataset": dataset,
+                "model_resolution": model,
+                "shot": int(match.group("shot")),
+                "preprocess": match.group("preprocess"),
+                "n_seeds": len(seeds),
+                "n_shared_categories": len(shared),
+                "seed_means": seed_means,
+                "per_category": per_category,
+            }
+        )
+    return table
+
+
 def collect_anomalyclip(directory: Path) -> list[dict]:
     """Read metrics.json files written after the AnomalyCLIP test hook."""
     rows = []
@@ -201,6 +290,7 @@ def write_comparison(
     anomalydino_root: Path | None,
     anomalyclip_dir: Path | None = None,
     multiscale_path: Path | None = None,
+    partial_image_root: Path | None = None,
 ) -> dict:
     table = {
         "part1": {name: collect_part1(path) for name, path in part1_dirs.items()},
@@ -208,6 +298,9 @@ def write_comparison(
         "anomalyclip": collect_anomalyclip(anomalyclip_dir) if anomalyclip_dir else [],
         "multiscale": collect_multiscale(multiscale_path) if multiscale_path else {"n_categories": 0, "per_category": {}, "mean": {}},
         "efficiency": collect_efficiency(anomalydino_root) if anomalydino_root else [],
+        "anomalydino_image": collect_partial_images(anomalydino_root, partial_image_root)
+        if anomalydino_root is not None and partial_image_root is not None
+        else [],
         "anomalydino_keys": list(SEED_SUMMARY_KEYS),
     }
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -233,6 +326,7 @@ def main() -> None:
         root / "third_party/AnomalyDINO",
         root / "outputs/part2/anomalyclip",
         root / "outputs/part3/multiscale/1shot_seed0_all15.json",
+        root / "outputs/part2/anomalydino_partial/image_scores",
     )
     part1_counts = {name: row["n_categories"] for name, row in table["part1"].items()}
     print(json.dumps({
@@ -241,6 +335,7 @@ def main() -> None:
         "anomalyclip_rows": len(table["anomalyclip"]),
         "multiscale_categories": table["multiscale"]["n_categories"],
         "efficiency_rows": len(table["efficiency"]),
+        "image_rows": len(table["anomalydino_image"]),
     }))
 
 
