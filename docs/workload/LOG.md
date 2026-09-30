@@ -123,3 +123,4 @@
 - `scripts/run_anomalyclip_test.sh` 在两份 `epoch_15.pth` 都存在后，用 VisA 上学到的提示测 MVTec，再用 MVTec 上学到的提示测 VisA。完成标记是 `ANOMALYCLIP_TEST_DONE`。权重还没写完，所以这轮没有启动测试。
 - 记忆库规模按 AnomalyDINO 的 8 个旋转角和 patch 14 估算。1-shot、448 分辨率的上界是 8192 个 patch 向量。demo 叠图上会写检测分数，有工作点时同时写 OK/NG。
 - `python -m src.inspection.evaluate_run` 在分数文件写完后输出指标 JSON。`python -m src.part3.apply_multiscale` 把 448 和 672 的同名热力图融合成一张。目录融合的单元测试已通过。
+- `python -m src.part3.apply_background` 用 GrabCut 前景把已保存热力图的背景分数清零。边角被清掉、物体中心保留的测试已通过。Part 1、两路 AnomalyDINO 和 AnomalyCLIP 训练进程仍在，这轮没有读取它们的进度。

@@ -63,5 +63,38 @@ class ApplyMultiScaleTest(unittest.TestCase):
             self.assertEqual(np.load(out / "a.npy").shape, (4, 4))
 
 
+class ApplyBackgroundTest(unittest.TestCase):
+    def test_border_scores_are_cleared(self) -> None:
+        import json
+        import tempfile
+        from pathlib import Path
+
+        import cv2
+
+        from src.part3.apply_background import suppress_directory
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            image_dir = root / "controlled" / "scratch"
+            image_dir.mkdir(parents=True)
+            image = np.zeros((64, 64, 3), dtype=np.uint8)
+            image[20:44, 20:44] = 220
+            cv2.imwrite(str(image_dir / "000.png"), cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
+            split = {
+                "threshold_validation": [],
+                "test": [{"path": "controlled/scratch/000.png", "label": "NG", "mask": None, "defect_type": "scratch"}],
+            }
+            split_path = root / "split.json"
+            split_path.write_text(json.dumps(split), encoding="utf-8")
+            map_dir = root / "maps"
+            map_dir.mkdir()
+            np.save(map_dir / "scratch_000.npy", np.ones((64, 64), dtype=np.float32))
+            count = suppress_directory(split_path, root, map_dir, root / "out", image_size=64)
+            saved = np.load(root / "out" / "scratch_000.npy")
+        self.assertEqual(count, 1)
+        self.assertEqual(saved[1, 1], 0)
+        self.assertGreater(saved[32, 32], 0)
+
+
 if __name__ == "__main__":
     unittest.main()
