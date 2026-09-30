@@ -138,3 +138,4 @@
 - 自编码器改成和差分并行：`scripts/run_autoencoder.sh` 用 GPU 0，结束标记 `AUTOENCODER_DONE`。已经写过 `scores.json` 的类别会跳过，文件锁避免和 Part 1 脚本里随后那次训练叠在一起。672 的验证图打分在 GPU 7，结束标记 `ANOMALYDINO_HELDOUT_672_DONE`。这轮只查了结束标记，都还没有。
 - 提示分数和视觉距离要对齐到同一条相对路径才能融合。AnomalyDINO 的测量表把测试图记成 `类别/test/缺陷/文件名`。AnomalyCLIP 测试会额外写 `image_scores.json`，每张测试图一个检测分数。验证尾图的分数仍来自补打分。`src/part2/score_files.py` 把两边收成融合脚本能读的分数文件。
 - bottle 差分的错误判定有 20 条，全部是正常图被判成 NG，原因都是物体内部的正常起伏，不是边角。缺陷图没有漏检。清单在 `outputs/part1/difference/bottle/failures.json`。VisA 和 MVTec 的 `meta.json` 测试路径能对上磁盘上的图像。
+- `python -m src.part2.build_fusion` 把 AnomalyDINO 的测试分数、两边的验证尾图分数和 AnomalyCLIP 的逐图分数合成一份融合结果。方向相反的标准化分数会互相抵消，单元测试已通过。`scripts/run_anomalyclip_heldout.sh` 在 VisA 上学到的 `epoch_15.pth` 出现后，给 MVTec 验证尾图打提示分数。权重还没写出来，所以这轮没有启动。
