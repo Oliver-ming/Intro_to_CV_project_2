@@ -43,5 +43,25 @@ class MultiScaleTest(unittest.TestCase):
         self.assertEqual(int(np.argmax(fused)), int(np.ravel_multi_index((3, 5), fused.shape)))
 
 
+class ApplyMultiScaleTest(unittest.TestCase):
+    def test_directory_fusion_writes_a_map(self) -> None:
+        import tempfile
+        from pathlib import Path
+
+        from src.part3.apply_multiscale import fuse_directory
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            fine = root / "fine"
+            coarse = root / "coarse"
+            fine.mkdir()
+            coarse.mkdir()
+            np.save(fine / "a.npy", np.zeros((4, 4), dtype=np.float32))
+            np.save(coarse / "a.npy", np.zeros((2, 2), dtype=np.float32))
+            out = fuse_directory(fine, coarse, ["a.npy"], root / "fused")
+            self.assertTrue((out / "a.npy").is_file())
+            self.assertEqual(np.load(out / "a.npy").shape, (4, 4))
+
+
 if __name__ == "__main__":
     unittest.main()

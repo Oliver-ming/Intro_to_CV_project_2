@@ -76,3 +76,22 @@ def evaluate_directory(split_path: Path, scores_path: Path, data_root: Path) -> 
     if map_dir.is_dir():
         summary.update(pixel_metrics(split, data_root, map_dir))
     return summary
+
+
+def main() -> None:
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--split", type=Path, required=True)
+    parser.add_argument("--scores", type=Path, required=True)
+    parser.add_argument("--data-root", type=Path, required=True)
+    parser.add_argument("--out", type=Path, required=True)
+    args = parser.parse_args()
+    summary = evaluate_directory(args.split, args.scores, args.data_root)
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    args.out.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    print(json.dumps(summary, indent=2))
+
+
+if __name__ == "__main__":
+    main()
