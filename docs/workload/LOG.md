@@ -130,3 +130,4 @@
 - 只查结束标记和进程是否还在。没有 `*_DONE`。Part 1 的差分已完成 bottle，正在做 cable 的测试图，大约每张 7 到 12 秒，没有卡住。AnomalyDINO 的 448、672、VisA 以及 AnomalyCLIP 训练进程都还在。
 - 提示分数和视觉检测分数的融合写在 `src/part3/fuse_scores.py`：两边都用正常验证分数做标准化后再平均。
 - `python -m src.part3.apply_score_fusion` 读两份分数文件，写出融合后的检测分数和 OK/NG。共享图像上的单元测试已通过。这轮没有再读长任务日志。
+- demo 叠图会写成带分数的 PNG，单元测试确认文件非空。`python -m src.inspection.completion` 只根据日志里的 `*_DONE` 判断任务是否结束。
