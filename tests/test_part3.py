@@ -96,5 +96,18 @@ class ApplyBackgroundTest(unittest.TestCase):
         self.assertGreater(saved[32, 32], 0)
 
 
+class FuseScoresTest(unittest.TestCase):
+    def test_shared_high_score_stays_highest(self) -> None:
+        from src.part3.fuse_scores import fuse_detection_scores
+
+        fused = fuse_detection_scores(
+            [0.1, 5.0],
+            [0.2, 4.0],
+            left_validation=[0.1, 0.2, 0.15],
+            right_validation=[0.2, 0.25, 0.22],
+        )
+        self.assertGreater(fused[1], fused[0])
+
+
 if __name__ == "__main__":
     unittest.main()
