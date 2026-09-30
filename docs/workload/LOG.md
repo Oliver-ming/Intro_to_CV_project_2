@@ -110,3 +110,8 @@
 
 - `src/inspection/wild.py` 按约定把受控正常图分成 20 张参考池和 10 张阈值验证图。光照和背景偏移只进测试集。单元测试已通过。
 - 在 GPU 3 上启动 VisA 的 AnomalyDINO，协议与 MVTec 相同。完成标记是 `ANOMALYDINO_VISA_DONE`。
+
+### 多尺度所需的 672 分辨率和 AD 2 数据
+
+- 在 GPU 4 上按同一套 1/2/4/8-shot、3 个种子跑 672 分辨率。完成标记是 `ANOMALYDINO_MVTEC_672_DONE`。和 448 的结果目录按分辨率分开。
+- 开始下载 MVTec AD 2 全量归档，约 32.7GB，放到 `data/archives/mvtec_ad_2.tar`。压力测试只用公开测试集，不提交私有榜。
