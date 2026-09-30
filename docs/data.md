@@ -34,7 +34,11 @@ wget -O data/archives/VisA_20220922.tar \
 data/VisA_pytorch/1cls/<category>/{train,test,ground_truth}/
 ```
 
-这是 AnomalyDINO 的默认路径。VisA 是主跨数据集。
+这是 AnomalyDINO 的默认路径。VisA 是主跨数据集。解压到 `data/visa_raw` 后运行：
+
+```bash
+/home/zhangyuming/CV_project/env_cv/bin/python -m src.inspection.prepare_visa
+```
 
 ## MVTec AD 2
 

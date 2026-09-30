@@ -64,3 +64,8 @@
 - 15 类 MVTec、VisA 做主跨数据集、AD 2 只做公开集压力测试，与 AnomalyDINO 的实验设置一致。
 - 已按论文改正：检测分数用最高 1% ；工作点用验证图像素的均值加 3 倍标准差，图像判定再用最大像素。MVTec 阈值验证图改到文件名排序的尾部，官方少样本切片留在前缀。背景抑制只做 PCA 掩码失败的情况。
 - 记录：`CONTEXT.md`，`docs/adr/0001-part3-exploration-directions.md`，`docs/adr/0005-operating-point-mean-plus-3std.md`，`docs/adr/0006-shared-normal-split.md`。
+
+### 下载并整理 VisA
+
+- `VisA_20220922.tar` 已下完，大小 1929840640 字节，与官方对象一致。
+- 解压到 `data/visa_raw`。`src/inspection/prepare_visa.py` 按 `split_csv/1cls.csv` 链到 `data/VisA_pytorch/1cls`，异常类目录用 `test/bad`，掩码用 `<stem>.png`，与 AnomalyDINO 的 VisA 读取方式一致。
