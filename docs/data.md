@@ -42,7 +42,15 @@ data/VisA_pytorch/1cls/<category>/{train,test,ground_truth}/
 
 ## MVTec AD 2
 
-只在 Part 3 的压力测试里使用公开测试集，不进主表，也不提交私有榜。放到 `data/mvtec_ad_2/`。
+只在 Part 3 的压力测试里使用公开测试集，不进主表，也不提交私有榜。放到 `data/mvtec_ad_2/`。公开测试图的官方布局是：
+
+```text
+data/mvtec_ad_2/<category>/test_public/good/
+data/mvtec_ad_2/<category>/test_public/bad/
+data/mvtec_ad_2/<category>/test_public/ground_truth/bad/<stem>_mask.png
+```
+
+`test_private` 和 `test_private_mixed` 不读，也不上传到 benchmark.mvtec.com。八个类别是 can、fabric、fruit_jelly、rice、sheet_metal、vial、wallplugs、walnuts。
 
 ## 自采检验集
 
