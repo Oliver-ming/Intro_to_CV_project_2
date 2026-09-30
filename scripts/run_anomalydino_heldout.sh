@@ -12,6 +12,7 @@ echo "ANOMALYDINO_HELDOUT_START $(date -Is)"
 "$PY" scripts/score_anomalydino_heldout.py \
   --device "${DEVICE:-cuda:6}" \
   --resolution "${RESOLUTION:-448}" \
+  --out-dir "$ROOT/outputs/part2/anomalydino_heldout/${RESOLUTION:-448}" \
   --shots 1 2 4 8 \
   --num-seeds 3
 echo "ANOMALYDINO_HELDOUT_DONE $(date -Is)"

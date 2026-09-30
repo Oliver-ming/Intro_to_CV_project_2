@@ -13,6 +13,8 @@ MARKERS = {
     "anomalyclip_train": "ANOMALYCLIP_TRAIN_DONE",
     "anomalyclip_test": "ANOMALYCLIP_TEST_DONE",
     "anomalydino_heldout": "ANOMALYDINO_HELDOUT_DONE",
+    "anomalydino_heldout_672": "ANOMALYDINO_HELDOUT_672_DONE",
+    "autoencoder": "AUTOENCODER_DONE",
 }
 
 LOGS = {
@@ -23,6 +25,8 @@ LOGS = {
     "anomalyclip_train": "outputs/part2/anomalyclip_train.log",
     "anomalyclip_test": "outputs/part2/anomalyclip_test.log",
     "anomalydino_heldout": "outputs/part2/anomalydino_heldout.log",
+    "anomalydino_heldout_672": "outputs/part2/anomalydino_heldout_672.log",
+    "autoencoder": "outputs/part1/autoencoder.log",
 }
 
 

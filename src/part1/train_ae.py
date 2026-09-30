@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import fcntl
 import json
 from pathlib import Path
 
@@ -84,6 +85,10 @@ def train_one(
     return model
 
 
+def scores_ready(out_dir: Path, category: str) -> bool:
+    return (out_dir / category / "scores.json").is_file()
+
+
 def run_category(
     split_path: Path,
     data_root: Path,
@@ -142,19 +147,29 @@ def main() -> None:
         split_paths = [path for path in split_paths if path.stem in wanted]
     if not split_paths:
         raise SystemExit(f"no splits in {args.split_dir}")
-    for split_path in split_paths:
-        print(f"autoencoder: {split_path.stem} on {device}")
-        run_category(
-            split_path,
-            args.data_root,
-            args.out_dir,
-            args.image_size,
-            args.epochs,
-            args.batch_size,
-            args.lr,
-            device,
-        )
-    print(json.dumps({"out_dir": str(args.out_dir), "device": str(device)}))
+    args.out_dir.mkdir(parents=True, exist_ok=True)
+    lock_handle = (args.out_dir / ".lock").open("a")
+    fcntl.flock(lock_handle.fileno(), fcntl.LOCK_EX)
+    try:
+        for split_path in split_paths:
+            if scores_ready(args.out_dir, split_path.stem):
+                print(f"skip autoencoder: {split_path.stem}")
+                continue
+            print(f"autoencoder: {split_path.stem} on {device}")
+            run_category(
+                split_path,
+                args.data_root,
+                args.out_dir,
+                args.image_size,
+                args.epochs,
+                args.batch_size,
+                args.lr,
+                device,
+            )
+        print(json.dumps({"out_dir": str(args.out_dir), "device": str(device)}))
+    finally:
+        fcntl.flock(lock_handle.fileno(), fcntl.LOCK_UN)
+        lock_handle.close()
 
 
 if __name__ == "__main__":
