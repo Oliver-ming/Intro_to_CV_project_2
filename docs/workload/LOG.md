@@ -137,3 +137,4 @@
 - 官方 AnomalyDINO 只给 `test/` 打分。工作点要用的正常验证尾图由 `scripts/score_anomalydino_heldout.py` 按同样的参考图切片补打分，完成标记是 `ANOMALYDINO_HELDOUT_DONE`。单张 bottle 验证图已在 GPU 6 上跑通，参考图是 `000.png`。AnomalyCLIP 的 `test.py` 现在会把未四舍五入的指标写到 `metrics.json`，`collect_tables` 会读它。
 - 自编码器改成和差分并行：`scripts/run_autoencoder.sh` 用 GPU 0，结束标记 `AUTOENCODER_DONE`。已经写过 `scores.json` 的类别会跳过，文件锁避免和 Part 1 脚本里随后那次训练叠在一起。672 的验证图打分在 GPU 7，结束标记 `ANOMALYDINO_HELDOUT_672_DONE`。这轮只查了结束标记，都还没有。
 - 提示分数和视觉距离要对齐到同一条相对路径才能融合。AnomalyDINO 的测量表把测试图记成 `类别/test/缺陷/文件名`。AnomalyCLIP 测试会额外写 `image_scores.json`，每张测试图一个检测分数。验证尾图的分数仍来自补打分。`src/part2/score_files.py` 把两边收成融合脚本能读的分数文件。
+- bottle 差分的错误判定有 20 条，全部是正常图被判成 NG，原因都是物体内部的正常起伏，不是边角。缺陷图没有漏检。清单在 `outputs/part1/difference/bottle/failures.json`。VisA 和 MVTec 的 `meta.json` 测试路径能对上磁盘上的图像。

@@ -2,7 +2,14 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import numpy as np
+
+from src.inspection.evaluate_run import map_filename
+from src.inspection.images import read_mask
+from src.inspection.splits import load_split
 
 
 def categorize_failure(
@@ -33,3 +40,54 @@ def categorize_failure(
     if defect_pixels > 0 and defect_pixels < small_defect_pixels:
         return "small_defect"
     return "missed_defect"
+
+
+def collect_failures(split: dict, scores: dict, map_dir: Path, data_root: Path) -> list[dict]:
+    """Wrong decisions for one category, using the saved anomaly maps."""
+    rows = []
+    for record in split["test"]:
+        entry = scores["test"][record["path"]]
+        anomaly = np.load(map_dir / map_filename(record["path"]))
+        mask = None if record["mask"] is None else read_mask(data_root / record["mask"])
+        cause = categorize_failure(record["label"], entry["decision"], anomaly, mask)
+        if cause is None:
+            continue
+        rows.append(
+            {
+                "path": record["path"],
+                "label": record["label"],
+                "decision": entry["decision"],
+                "cause": cause,
+                "detection_score": entry["detection_score"],
+            }
+        )
+    return rows
+
+
+def summarize_causes(rows: list[dict]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for row in rows:
+        counts[row["cause"]] = counts.get(row["cause"], 0) + 1
+    return counts
+
+
+def main() -> None:
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--split", type=Path, required=True)
+    parser.add_argument("--scores", type=Path, required=True)
+    parser.add_argument("--data-root", type=Path, required=True)
+    parser.add_argument("--out", type=Path, required=True)
+    args = parser.parse_args()
+    split = load_split(args.split)
+    scores = json.loads(args.scores.read_text(encoding="utf-8"))
+    rows = collect_failures(split, scores, args.scores.parent / "maps", args.data_root)
+    payload = {"n_failures": len(rows), "causes": summarize_causes(rows), "failures": rows}
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    args.out.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    print(json.dumps({"n_failures": payload["n_failures"], "causes": payload["causes"]}))
+
+
+if __name__ == "__main__":
+    main()
