@@ -89,3 +89,4 @@
 - `src/inspection/metrics.py` 提供图像 AUROC、AP、工作点上的误报率，以及积分上限 0.3 的 AUPRO。合成例子测试已通过。
 - `src/demo/inspect.py` 对一张图跑 Part 1 差分，写出叠加热力图。若该类的 `scores.json` 已有工作点，同时给出 OK/NG。
 - AnomalyCLIP 仓库没有附带 `epoch_15.pth`。提示权重要在空闲 GPU 上按官方设定训练，不占用正在跑的 Part 1 和 AnomalyDINO。
+- 已为 AnomalyCLIP 生成 `data/mvtec_anomaly_detection/meta.json` 和 `data/visa_raw/meta.json`。训练脚本用 GPU 2，先在 VisA 上训提示，再在 MVTec 上训提示。完成标记是 `ANOMALYCLIP_TRAIN_DONE`。
