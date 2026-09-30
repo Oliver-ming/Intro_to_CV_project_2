@@ -146,3 +146,4 @@
 - 自编码器 hazelnut 的图像级 AUROC 0.950，AP 0.973，110 张测试图，正常图误报率 1.0。leather 是 0.750 / 0.921 / 1.0，124 张。正在把 GrabCut 用到 AnomalyDINO 1-shot 种子 0 的 cable 和 transistor patch 上，比较抑制前后的检测分数。这轮结束标记都还没有。
 - 448 和 672 的 patch 距离在 1-shot 种子 0 上做了融合，只用两边都写完的 8 类：bottle、cable、capsule、carpet、grid、hazelnut、leather、metal_nut。标准化用的是同一种子的正常验证图。图像级 AUROC / AP：448 为 0.980 / 0.992，672 为 0.981 / 0.993，融合后 0.983 / 0.994。cable 从 0.932 升到 0.941。这还不是 15 类，也还没有像素级。数字在 `outputs/part3/multiscale/1shot_seed0.json`。
 - pill 后来也齐了。448 / 672 / 融合的图像级 AUROC 是 0.915 / 0.927 / 0.954。加上 pill 后这 9 类的平均 AUROC 是 0.973 / 0.975 / 0.980。自编码器 metal_nut 的图像级 AUROC 只有 0.356：正常图平均分 0.089，缺陷图 0.081，排序是反的。115 张测试图，误报率 1.0。
+- 这 9 类在 672 的 patch 网格上又算了像素指标，掩码缩小到该网格，不是官方全分辨率。平均像素 AUROC / AUPRO：把 448 放大到这个网格是 0.976 / 0.944，原生 672 是 0.968 / 0.918，融合是 0.977 / 0.945。融合的图像级 AUROC 仍是 0.980。数字在 `outputs/part3/multiscale/1shot_seed0_pixels.json`。
