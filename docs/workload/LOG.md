@@ -131,3 +131,4 @@
 - 提示分数和视觉检测分数的融合写在 `src/part3/fuse_scores.py`：两边都用正常验证分数做标准化后再平均。
 - `python -m src.part3.apply_score_fusion` 读两份分数文件，写出融合后的检测分数和 OK/NG。共享图像上的单元测试已通过。这轮没有再读长任务日志。
 - demo 叠图会写成带分数的 PNG，单元测试确认文件非空。`python -m src.inspection.completion` 只根据日志里的 `*_DONE` 判断任务是否结束。
+- 错误判定按原因归类：正常图的边角高响应算背景或边界，漏检且缺陷像素很少算细缺陷。`tests/test_failures.py` 已通过。这轮没有读长任务日志。
