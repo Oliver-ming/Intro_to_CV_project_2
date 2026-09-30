@@ -7,6 +7,7 @@ import numpy as np
 SEED_SUMMARY_KEYS = (
     "mean_classification_au_roc",
     "mean_classification_ap",
+    # Official F1 is the maximum of the test precision-recall curve.
     "mean_classification_f1",
     "mean_au_pro",
     "mean_segmentation_au_roc",
