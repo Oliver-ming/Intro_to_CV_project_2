@@ -78,28 +78,39 @@ def _residual_map(test_rgb: np.ndarray, reference_rgb: np.ndarray, warp: np.ndar
     return restored
 
 
+def prepare_reference(reference_path: Path, image_size: int) -> tuple[Path, np.ndarray, np.ndarray]:
+    """Load one reference once, at the working resolution."""
+    reference_rgb = to_float_rgb(resize_rgb(read_rgb(reference_path), image_size))
+    reference_gray = to_gray_float((reference_rgb * 255).astype(np.uint8))
+    return reference_path, reference_rgb, reference_gray
+
+
 def difference_map(
     test_path: Path,
     reference_paths: list[Path],
     image_size: int,
     shortlist: int = 3,
     min_correlation: float = 0.5,
+    prepared: list[tuple[Path, np.ndarray, np.ndarray]] | None = None,
 ) -> tuple[np.ndarray, str]:
     """Score ``test_path`` against the closest references.
 
     Returns the anomaly map at ``image_size`` and the reference path that was used.
     The map is later resized to the original image only for pixel metrics.
+    ``prepared`` is the reference pool already resized, so a category can load it once.
     """
-    if not reference_paths:
+    if prepared is None:
+        if not reference_paths:
+            raise ValueError("reference pool is empty")
+        prepared = [prepare_reference(path, image_size) for path in reference_paths]
+    elif not prepared:
         raise ValueError("reference pool is empty")
 
     test_rgb = to_float_rgb(resize_rgb(read_rgb(test_path), image_size))
     test_gray = to_gray_float((test_rgb * 255).astype(np.uint8))
 
     ranked: list[tuple[float, Path, np.ndarray]] = []
-    for reference_path in reference_paths:
-        reference_rgb = to_float_rgb(resize_rgb(read_rgb(reference_path), image_size))
-        reference_gray = to_gray_float((reference_rgb * 255).astype(np.uint8))
+    for reference_path, reference_rgb, reference_gray in prepared:
         ranked.append((_coarse_distance(test_gray, reference_gray), reference_path, reference_rgb))
     ranked.sort(key=lambda item: item[0])
 

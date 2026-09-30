@@ -29,6 +29,29 @@ class DifferenceSmokeTest(unittest.TestCase):
         self.assertTrue(40 <= peak[0] <= 55)
         self.assertTrue(70 <= peak[1] <= 85)
 
+    def test_prepared_references_match_loading_per_image(self) -> None:
+        reference = np.full((128, 128, 3), 180, np.uint8)
+        test = reference.copy()
+        test[40:55, 70:85] = 20
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            ref_path = root / "ref.png"
+            test_path = root / "test.png"
+            cv2.imwrite(str(ref_path), cv2.cvtColor(reference, cv2.COLOR_RGB2BGR))
+            cv2.imwrite(str(test_path), cv2.cvtColor(test, cv2.COLOR_RGB2BGR))
+            from src.part1.difference import prepare_reference
+
+            direct, direct_ref = difference_map(test_path, [ref_path], image_size=128, shortlist=1)
+            cached, cached_ref = difference_map(
+                test_path,
+                [],
+                image_size=128,
+                shortlist=1,
+                prepared=[prepare_reference(ref_path, 128)],
+            )
+        self.assertEqual(direct_ref, cached_ref)
+        self.assertTrue(np.allclose(direct, cached))
+
 
 class DifferenceSkipTest(unittest.TestCase):
     def test_finished_category_is_not_recomputed(self) -> None:
