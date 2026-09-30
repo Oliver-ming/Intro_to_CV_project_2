@@ -57,3 +57,10 @@
 - MVTec 官方 mydrive 只有几十 KB/s，已改从 Hugging Face 上同一大小的归档下载。
 - MVTec 正常图划分写成 `docs/adr/0006-shared-normal-split.md`：每类从 `train/good` 抽 10 张做阈值验证，种子 0。
 - Part 1 代码：配准差分在 `src/part1/difference.py`，自编码器在 `src/part1/autoencoder.py`。工作分辨率先用 256，和后面的 DINOv2 分辨率分开记录。
+
+### 对照论文复核已定方案
+
+- 对照了 AnomalyDINO（WACV 2025）、其官方代码、AnomalyCLIP 的 `test.sh`，以及 MVTec AD 2 的阈值段落。
+- 15 类 MVTec、VisA 做主跨数据集、AD 2 只做公开集压力测试，与 AnomalyDINO 的实验设置一致。
+- 图像分数取热力图最大像素、工作点取这些图像分数的均值加 3 倍标准差，与两篇论文的定义都不一致。修正方案待确认后再改 ADR。
+- AnomalyDINO 默认的 agnostic 流程已经做了 PCA 前景掩码。背景抑制若只重复这一步，不能算 Part 3 的新贡献。
