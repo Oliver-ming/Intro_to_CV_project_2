@@ -172,5 +172,17 @@ class RescoreTest(unittest.TestCase):
         self.assertFalse(payload["labels_used_for_threshold"])
 
 
+class SuppressPatchTest(unittest.TestCase):
+    def test_border_patch_is_cleared_and_center_patch_remains(self) -> None:
+        from src.part3.suppress_patches import suppress_patch_grid
+
+        image = np.zeros((64, 64, 3), dtype=np.uint8)
+        image[16:48, 16:48] = 220
+        grid = np.ones((8, 8), dtype=np.float32)
+        suppressed = suppress_patch_grid(grid, image)
+        self.assertEqual(suppressed[0, 0], 0)
+        self.assertEqual(suppressed[4, 4], 1)
+
+
 if __name__ == "__main__":
     unittest.main()
