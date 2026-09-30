@@ -49,6 +49,14 @@ class Part2HelperTest(unittest.TestCase):
 
     def test_image_score_hook_writes_one_row_per_image(self) -> None:
         source = Path("third_party/AnomalyCLIP/test.py").read_text(encoding="utf-8")
+        if IMAGE_SCORE_MARKER in source:
+            source = source.replace("    image_score_rows = []\n", "", 1)
+            start = source.find("            image_score_rows.append(")
+            end = source.find("            })\n", start)
+            source = source[:start] + source[end + len("            })\n"):]
+            start = source.find("    # PROJECT2_IMAGE_SCORES:")
+            end = source.find("        json.dump(image_score_rows, handle)\n", start)
+            source = source[:start] + source[end + len("        json.dump(image_score_rows, handle)\n"):]
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "test.py"
             path.write_text(source, encoding="utf-8")
