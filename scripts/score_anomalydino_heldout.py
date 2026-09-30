@@ -178,6 +178,20 @@ def main() -> None:
                 destination.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
                 print(f"wrote {destination}")
 
+    if not args.max_images:
+        missing = [
+            args.out_dir / f"{shot}-shot" / f"seed={seed}" / split_path.stem / "scores.json"
+            for shot in args.shots
+            for seed in range(args.num_seeds)
+            for split_path in split_paths
+            if not (args.out_dir / f"{shot}-shot" / f"seed={seed}" / split_path.stem / "scores.json").is_file()
+        ]
+        from src.inspection.completion import heldout_done_marker
+
+        marker = heldout_done_marker(args.resolution)
+        if marker and not missing:
+            print(marker)
+
 
 if __name__ == "__main__":
     main()

@@ -32,6 +32,15 @@ LOGS = {
 }
 
 
+def heldout_done_marker(resolution: int) -> str | None:
+    """Marker printed after a full validation-tail run at one resolution."""
+    if resolution == 448:
+        return MARKERS["anomalydino_heldout"]
+    if resolution == 672:
+        return MARKERS["anomalydino_heldout_672"]
+    return None
+
+
 def completion_status(root: Path) -> dict[str, bool]:
     status = {}
     for name, marker in MARKERS.items():

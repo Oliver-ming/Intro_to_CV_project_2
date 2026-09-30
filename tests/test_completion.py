@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from src.inspection.completion import completion_status
+from src.inspection.completion import completion_status, heldout_done_marker
 
 
 class CompletionTest(unittest.TestCase):
@@ -19,6 +19,11 @@ class CompletionTest(unittest.TestCase):
             status = completion_status(root)
         self.assertTrue(status["part1"])
         self.assertFalse(status["anomalydino_mvtec"])
+
+    def test_heldout_marker_follows_resolution(self) -> None:
+        self.assertEqual(heldout_done_marker(448), "ANOMALYDINO_HELDOUT_DONE")
+        self.assertEqual(heldout_done_marker(672), "ANOMALYDINO_HELDOUT_672_DONE")
+        self.assertIsNone(heldout_done_marker(256))
 
 
 if __name__ == "__main__":
