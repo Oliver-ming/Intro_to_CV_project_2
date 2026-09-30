@@ -65,7 +65,11 @@ def aupro(
     if normal_count == 0:
         return float("nan")
 
-    thresholds = np.unique(np.concatenate([anomaly.ravel() for anomaly in maps]))[::-1]
+    pooled = np.concatenate([anomaly.ravel() for anomaly in maps])
+    if pooled.size > 256:
+        thresholds = np.unique(np.quantile(pooled, np.linspace(0.0, 1.0, 256)))[::-1]
+    else:
+        thresholds = np.unique(pooled)[::-1]
     fprs = [0.0]
     pros = [0.0]
     for threshold in thresholds:
