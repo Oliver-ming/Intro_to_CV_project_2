@@ -15,6 +15,7 @@ from pathlib import Path
 
 from src.inspection.aggregate_seeds import SEED_SUMMARY_KEYS, aggregate_seed_metrics, mean_and_std
 from src.inspection.categories import MVTEC_CATEGORIES
+from src.inspection.efficiency import summarize_by_category
 
 PART1_KEYS = (
     "image_auroc",
@@ -139,6 +140,45 @@ def collect_multiscale(path: Path) -> dict:
     return {"n_categories": len(per_category), "per_category": per_category, "mean": mean}
 
 
+def collect_efficiency(results_root: Path) -> list[dict]:
+    """Timing rows for seeds whose official metrics file already exists.
+
+    A measurements CSV grows while a seed is still running. The matching
+    ``metrics_seed`` file is written only after that seed finishes, so
+    partial tables stay out of the comparison.
+    """
+    rows = []
+    if not results_root.is_dir():
+        return rows
+    for csv_path in sorted(results_root.glob("results_*/**/measurements_seed=*.csv")):
+        metrics_name = csv_path.name.replace("measurements_", "metrics_").replace(".csv", ".json")
+        if not (csv_path.parent / metrics_name).is_file():
+            continue
+        shot_dir = csv_path.parent
+        match = _SHOT_DIR.match(shot_dir.name)
+        if match is None:
+            continue
+        seed_text = csv_path.stem.split("=", 1)[1]
+        summary = summarize_by_category(csv_path)
+        rows.append(
+            {
+                "dataset": shot_dir.parent.parent.name.removeprefix("results_"),
+                "model_resolution": shot_dir.parent.name,
+                "shot": int(match.group("shot")),
+                "preprocess": match.group("preprocess"),
+                "seed": int(seed_text),
+                "n_images": summary["n_images"],
+                "n_categories": summary["n_categories"],
+                "scoring_seconds_mean": summary["scoring_seconds_mean"],
+                "memory_bank_seconds_mean": summary["memory_bank_seconds_mean"],
+                "memory_bank_seconds_min": summary["memory_bank_seconds_min"],
+                "memory_bank_seconds_max": summary["memory_bank_seconds_max"],
+                "per_category": summary["per_category"],
+            }
+        )
+    return rows
+
+
 def collect_anomalyclip(directory: Path) -> list[dict]:
     """Read metrics.json files written after the AnomalyCLIP test hook."""
     rows = []
@@ -167,6 +207,7 @@ def write_comparison(
         "anomalydino": collect_anomalydino(anomalydino_root) if anomalydino_root else [],
         "anomalyclip": collect_anomalyclip(anomalyclip_dir) if anomalyclip_dir else [],
         "multiscale": collect_multiscale(multiscale_path) if multiscale_path else {"n_categories": 0, "per_category": {}, "mean": {}},
+        "efficiency": collect_efficiency(anomalydino_root) if anomalydino_root else [],
         "anomalydino_keys": list(SEED_SUMMARY_KEYS),
     }
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -199,6 +240,7 @@ def main() -> None:
         "anomalydino_rows": len(table["anomalydino"]),
         "anomalyclip_rows": len(table["anomalyclip"]),
         "multiscale_categories": table["multiscale"]["n_categories"],
+        "efficiency_rows": len(table["efficiency"]),
     }))
 
 

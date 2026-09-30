@@ -59,7 +59,7 @@ AnomalyDINO 的 MVTec、VisA 和 672 分辨率复现分别由 `scripts/run_anoma
 $PY -m src.inspection.collect_tables
 ```
 
-输出在 `outputs/tables/comparison.json`。
+输出在 `outputs/tables/comparison.json`。其中的效率行只收录已经有 `metrics_seed` 的种子：逐图打分时间，以及每个类别只计一次的记忆库构建时间。
 
 AnomalyDINO 官方流程不给阈值验证图打分。补打分用：
 

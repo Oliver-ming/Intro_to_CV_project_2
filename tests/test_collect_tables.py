@@ -10,6 +10,7 @@ from pathlib import Path
 from src.inspection.collect_tables import (
     collect_anomalyclip,
     collect_anomalydino,
+    collect_efficiency,
     collect_multiscale,
     collect_part1,
     write_comparison,
@@ -95,6 +96,27 @@ class CollectTablesTest(unittest.TestCase):
             self.assertEqual(summary["n_categories"], 2)
             self.assertAlmostEqual(summary["mean"]["fused"]["image_auroc"], 0.6)
             self.assertEqual(collect_multiscale(Path(tmp) / "missing.json")["n_categories"], 0)
+
+    def test_efficiency_skips_a_seed_without_official_metrics(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            shot = root / "results_MVTec" / "dinov2_vits14_448" / "1-shot_preprocess=agnostic"
+            shot.mkdir(parents=True)
+            header = "Object,Sample,Anomaly_Score,MemoryBank_Time,Inference_Time\n"
+            (shot / "measurements_seed=0.csv").write_text(
+                header + "bottle,good/000,0.1,1.5,0.2\n",
+                encoding="utf-8",
+            )
+            (shot / "measurements_seed=1.csv").write_text(
+                header + "bottle,good/000,0.1,4.0,0.8\n",
+                encoding="utf-8",
+            )
+            (shot / "metrics_seed=0.json").write_text("{}", encoding="utf-8")
+            rows = collect_efficiency(root)
+            self.assertEqual(len(rows), 1)
+            self.assertEqual(rows[0]["seed"], 0)
+            self.assertAlmostEqual(rows[0]["scoring_seconds_mean"], 0.2)
+            self.assertEqual(rows[0]["dataset"], "MVTec")
 
 
 if __name__ == "__main__":

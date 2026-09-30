@@ -9,7 +9,11 @@ import torch
 
 
 def summarize_measurements(csv_path: Path) -> dict[str, float]:
-    """Mean memory-bank build time and per-image scoring time, in seconds."""
+    """Mean memory-bank build time and per-image scoring time, in seconds.
+
+    The bank time is repeated on every image row, so this mean is weighted
+    by how many test images a category has.
+    """
     bank_times = []
     score_times = []
     with csv_path.open(newline="", encoding="utf-8") as handle:
@@ -22,6 +26,37 @@ def summarize_measurements(csv_path: Path) -> dict[str, float]:
         "n_images": float(len(score_times)),
         "memory_bank_seconds_mean": sum(bank_times) / len(bank_times),
         "scoring_seconds_mean": sum(score_times) / len(score_times),
+    }
+
+
+def summarize_by_category(csv_path: Path) -> dict:
+    """One memory-bank time per category, plus the mean scoring time per image."""
+    bank_time: dict[str, float] = {}
+    score_times: dict[str, list[float]] = {}
+    with csv_path.open(newline="", encoding="utf-8") as handle:
+        for row in csv.DictReader(handle):
+            category = row["Object"]
+            bank_time[category] = float(row["MemoryBank_Time"])
+            score_times.setdefault(category, []).append(float(row["Inference_Time"]))
+    if not score_times:
+        raise ValueError(f"no measurements in {csv_path}")
+    per_category = {}
+    for category, times in score_times.items():
+        per_category[category] = {
+            "n_images": len(times),
+            "memory_bank_seconds": bank_time[category],
+            "scoring_seconds_mean": sum(times) / len(times),
+        }
+    bank_values = [row["memory_bank_seconds"] for row in per_category.values()]
+    all_scores = [value for times in score_times.values() for value in times]
+    return {
+        "n_images": len(all_scores),
+        "n_categories": len(per_category),
+        "scoring_seconds_mean": sum(all_scores) / len(all_scores),
+        "memory_bank_seconds_mean": sum(bank_values) / len(bank_values),
+        "memory_bank_seconds_min": min(bank_values),
+        "memory_bank_seconds_max": max(bank_values),
+        "per_category": per_category,
     }
 
 

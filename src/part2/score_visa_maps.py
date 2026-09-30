@@ -17,6 +17,29 @@ from src.inspection.metrics import aupro, safe_ap, safe_auroc
 from src.inspection.threshold import mean_top1p
 
 
+def visa_image_metrics(map_dir: Path) -> dict:
+    """Image AUROC and AP only. Pixel metrics wait for the official file."""
+    category = map_dir.name
+    labels = []
+    scores = []
+    for grid_path in sorted(map_dir.rglob("*.npy")):
+        relative = grid_path.relative_to(map_dir)
+        if len(relative.parts) < 2 or relative.parts[1] not in {"good", "bad"}:
+            continue
+        labels.append(0 if relative.parts[1] == "good" else 1)
+        scores.append(mean_top1p(np.load(grid_path)))
+    if not labels:
+        raise FileNotFoundError(f"no patch grids in {map_dir}")
+    labels_array = np.asarray(labels)
+    values = np.asarray(scores)
+    return {
+        "category": category,
+        "n_test": int(labels_array.size),
+        "image_auroc": safe_auroc(labels_array, values),
+        "image_ap": safe_ap(labels_array, values),
+    }
+
+
 def score_visa_category(map_dir: Path, data_root: Path) -> dict:
     category = map_dir.name
     labels = []
