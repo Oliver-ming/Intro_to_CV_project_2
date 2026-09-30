@@ -92,3 +92,10 @@
 - 已为 AnomalyCLIP 生成 `data/mvtec_anomaly_detection/meta.json` 和 `data/visa_raw/meta.json`。训练脚本用 GPU 2，先在 VisA 上训提示，再在 MVTec 上训提示。完成标记是 `ANOMALYCLIP_TRAIN_DONE`。
 - 第一次启动因缺少 `thop` 退出。已装上 `thop` 和 `tabulate`，并重新启动。
 - 第二次启动时 CLIP 权重被写到作者机器上的 `/remote-home/...`。已改回 `~/.cache/clip` 后再启动。
+
+### Part 3 的可单测部分
+
+- `src/inspection/evaluate_run.py` 能在 `scores.json` 和热力图写完后计算图像 AUROC、AP、误报率，以及像素 AUROC、AP、AUPRO。
+- `src/part3/background.py` 用中心矩形初始化的 GrabCut 得到前景，并把背景上的异常分数清零。这是 PCA 掩码失败时的替代，不是再做一遍第一主成分。
+- `src/part3/fusion.py` 先用各自验证像素的均值和标准差把两张热力图标准化，再取平均。
+- 这三项的单元测试已通过。长任务的中间进度这轮没有查看。
