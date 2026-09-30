@@ -13,11 +13,8 @@ def main() -> None:
     parser.add_argument("--data-root", type=Path, default=Path("data/mvtec_anomaly_detection"))
     parser.add_argument("--out-dir", type=Path, default=Path("outputs/splits/mvtec"))
     parser.add_argument("--val-count", type=int, default=10)
-    parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
-    written = write_mvtec_splits(
-        args.data_root, args.out_dir, val_count=args.val_count, seed=args.seed
-    )
+    written = write_mvtec_splits(args.data_root, args.out_dir, val_count=args.val_count)
     print(f"wrote {len(written)} splits to {args.out_dir}")
 
 

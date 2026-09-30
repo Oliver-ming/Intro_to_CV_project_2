@@ -124,4 +124,5 @@ def difference_map(
 
 
 def image_score(anomaly_map: np.ndarray) -> float:
+    """Hottest pixel. Used for OK/NG, not for AnomalyDINO's detection AUROC."""
     return float(np.max(anomaly_map))

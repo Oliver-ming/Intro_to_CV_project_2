@@ -62,5 +62,5 @@
 
 - 对照了 AnomalyDINO（WACV 2025）、其官方代码、AnomalyCLIP 的 `test.sh`，以及 MVTec AD 2 的阈值段落。
 - 15 类 MVTec、VisA 做主跨数据集、AD 2 只做公开集压力测试，与 AnomalyDINO 的实验设置一致。
-- 图像分数取热力图最大像素、工作点取这些图像分数的均值加 3 倍标准差，与两篇论文的定义都不一致。修正方案待确认后再改 ADR。
-- AnomalyDINO 默认的 agnostic 流程已经做了 PCA 前景掩码。背景抑制若只重复这一步，不能算 Part 3 的新贡献。
+- 已按论文改正：检测分数用最高 1% ；工作点用验证图像素的均值加 3 倍标准差，图像判定再用最大像素。MVTec 阈值验证图改到文件名排序的尾部，官方少样本切片留在前缀。背景抑制只做 PCA 掩码失败的情况。
+- 记录：`CONTEXT.md`，`docs/adr/0001-part3-exploration-directions.md`，`docs/adr/0005-operating-point-mean-plus-3std.md`，`docs/adr/0006-shared-normal-split.md`。

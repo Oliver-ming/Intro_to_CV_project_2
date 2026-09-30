@@ -27,7 +27,7 @@ VisA 解压后还要整理成 AnomalyDINO 使用的 `data/VisA_pytorch/1cls/`。
 
 ## Part 1
 
-正常图划分对所有方法共用。工作点只用阈值验证图，取图像异常分数的均值加 3 倍标准差。
+正常图划分对所有方法共用，规则见 `docs/adr/0006-shared-normal-split.md`。检测分数和工作点不是同一个数，规则见 `docs/adr/0005-operating-point-mean-plus-3std.md`。
 
 ```bash
 PY=/home/zhangyuming/CV_project/env_cv/bin/python

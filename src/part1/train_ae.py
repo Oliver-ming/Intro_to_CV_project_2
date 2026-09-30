@@ -16,7 +16,6 @@ from src.inspection.images import read_rgb, resize_rgb, to_float_rgb
 from src.inspection.reporting import write_scores
 from src.inspection.splits import load_split
 from src.part1.autoencoder import ConvAutoencoder, reconstruction_loss
-from src.part1.difference import image_score
 
 
 class ReferenceDataset(Dataset):
@@ -42,23 +41,23 @@ def anomaly_map(model: ConvAutoencoder, image: np.ndarray, device: torch.device)
     return blurred
 
 
-def score_paths(
+def collect_maps(
     model: ConvAutoencoder,
     data_root: Path,
     relative_paths: list[str],
     image_size: int,
     map_dir: Path,
     device: torch.device,
-) -> dict[str, float]:
-    scores = {}
+) -> dict[str, np.ndarray]:
+    maps = {}
     for relative in tqdm(relative_paths, leave=False):
         image = to_float_rgb(resize_rgb(read_rgb(data_root / relative), image_size))
         heat = anomaly_map(model, image, device)
         stem = Path(relative).stem
         parent = Path(relative).parent.name
         np.save(map_dir / f"{parent}_{stem}.npy", heat)
-        scores[relative] = image_score(heat)
-    return scores
+        maps[relative] = heat
+    return maps
 
 
 def train_one(
@@ -103,15 +102,15 @@ def run_category(
     references = [data_root / relative for relative in split["reference_pool"]]
     model = train_one(references, image_size, epochs, batch_size, lr, device)
     torch.save(model.state_dict(), category_dir / "autoencoder.pt")
-    validation_scores = score_paths(
+    validation_maps = collect_maps(
         model, data_root, split["threshold_validation"], image_size, map_dir, device
     )
     test_paths = [record["path"] for record in split["test"]]
-    test_scores = score_paths(model, data_root, test_paths, image_size, map_dir, device)
+    test_maps = collect_maps(model, data_root, test_paths, image_size, map_dir, device)
     write_scores(
         category_dir / "scores.json",
-        validation_scores,
-        test_scores,
+        validation_maps,
+        test_maps,
         extra={
             "method": "part1_autoencoder",
             "category": category,

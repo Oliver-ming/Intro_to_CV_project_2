@@ -11,17 +11,17 @@ from tqdm import tqdm
 
 from src.inspection.reporting import write_scores
 from src.inspection.splits import load_split
-from src.part1.difference import difference_map, image_score
+from src.part1.difference import difference_map
 
 
-def _score_paths(
+def _collect_maps(
     data_root: Path,
     relative_paths: list[str],
     references: list[Path],
     image_size: int,
     map_dir: Path,
-) -> dict[str, float]:
-    scores = {}
+) -> dict[str, np.ndarray]:
+    maps = {}
     for relative in tqdm(relative_paths, leave=False):
         anomaly, _reference = difference_map(
             data_root / relative, references, image_size=image_size
@@ -29,8 +29,8 @@ def _score_paths(
         stem = Path(relative).stem
         parent = Path(relative).parent.name
         np.save(map_dir / f"{parent}_{stem}.npy", anomaly)
-        scores[relative] = image_score(anomaly)
-    return scores
+        maps[relative] = anomaly
+    return maps
 
 
 def run_category(split_path: Path, data_root: Path, out_dir: Path, image_size: int) -> None:
@@ -40,15 +40,15 @@ def run_category(split_path: Path, data_root: Path, out_dir: Path, image_size: i
     map_dir = category_dir / "maps"
     map_dir.mkdir(parents=True, exist_ok=True)
     references = [data_root / relative for relative in split["reference_pool"]]
-    validation_scores = _score_paths(
+    validation_maps = _collect_maps(
         data_root, split["threshold_validation"], references, image_size, map_dir
     )
     test_paths = [record["path"] for record in split["test"]]
-    test_scores = _score_paths(data_root, test_paths, references, image_size, map_dir)
+    test_maps = _collect_maps(data_root, test_paths, references, image_size, map_dir)
     write_scores(
         category_dir / "scores.json",
-        validation_scores,
-        test_scores,
+        validation_maps,
+        test_maps,
         extra={
             "method": "part1_difference",
             "category": category,
