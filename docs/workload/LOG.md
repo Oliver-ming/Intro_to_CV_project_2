@@ -82,3 +82,4 @@
 - PyTorch 2.11.0+cu128 安装成功，CUDA 可用，看到 8 张 RTX 4090。
 - 协议测试和差分冒烟测试 5 项通过。
 - 接着用 `scripts/run_part1.sh` 跑全部 15 类。完成标记是日志里的 `PART1_DONE`。
+- 在 GPU 1 上启动 AnomalyDINO 官方复现：dinov2_vits14、448、agnostic、1/2/4/8-shot、3 个种子、`--faiss_on_cpu`、同时算分割。完成标记是 `ANOMALYDINO_MVTEC_DONE`。Part 1 的自编码器仍用 GPU 0。
