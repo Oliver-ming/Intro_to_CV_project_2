@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # Train AnomalyCLIP prompts the way the official script does:
 # first on VisA (used when testing MVTec), then on MVTec (used when testing VisA).
+# The official Dataset defaults to meta.json["test"]. That is required:
+# the train split has no defect masks, and the prompt loss needs them.
+# VisA test images are not MVTec images, so the MVTec evaluation stays zero-shot.
 # Prints ANOMALYCLIP_TRAIN_DONE when both checkpoints exist.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
