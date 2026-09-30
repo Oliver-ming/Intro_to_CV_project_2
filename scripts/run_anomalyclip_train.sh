@@ -8,6 +8,15 @@ PY="${PY:-/home/zhangyuming/CV_project/env_cv/bin/python}"
 LOG="${LOG:-$ROOT/outputs/part2/anomalyclip_train.log}"
 mkdir -p "$(dirname "$LOG")"
 cd "$ROOT/third_party/AnomalyCLIP"
+"$PY" - <<'PY'
+from pathlib import Path
+path = Path("AnomalyCLIP_lib/model_load.py")
+text = path.read_text()
+old = 'os.path.expanduser("/remote-home/iot_zhouqihang/root/.cache/clip")'
+new = 'os.path.expanduser("~/.cache/clip")'
+if old in text:
+    path.write_text(text.replace(old, new))
+PY
 export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-2}"
 exec > >(tee -a "$LOG") 2>&1
 echo "ANOMALYCLIP_TRAIN_START $(date -Is) gpu=${CUDA_VISIBLE_DEVICES}"
