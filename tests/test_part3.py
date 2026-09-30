@@ -132,5 +132,45 @@ class ApplyScoreFusionTest(unittest.TestCase):
         self.assertGreater(payload["test"]["d"]["detection_score"], payload["test"]["c"]["detection_score"])
 
 
+class TargetTest(unittest.TestCase):
+    def test_grabcut_is_only_for_the_pca_failures_and_the_mouse(self) -> None:
+        from src.part3.targets import needs_grabcut
+
+        self.assertTrue(needs_grabcut("cable"))
+        self.assertTrue(needs_grabcut("transistor"))
+        self.assertTrue(needs_grabcut("mouse"))
+        self.assertFalse(needs_grabcut("bottle"))
+        self.assertFalse(needs_grabcut("carpet"))
+
+
+class RescoreTest(unittest.TestCase):
+    def test_suppressed_border_lowers_the_detection_score(self) -> None:
+        import json
+        import tempfile
+        from pathlib import Path
+
+        from src.part3.rescore import rescore_directory
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            maps = root / "maps"
+            maps.mkdir()
+            heat = np.zeros((16, 16), dtype=np.float32)
+            heat[0, :] = 1
+            np.save(maps / "good_000.npy", heat)
+            np.save(maps / "good_001.npy", np.zeros((16, 16), dtype=np.float32))
+            split = {
+                "category": "cable",
+                "threshold_validation": ["cable/train/good/000.png"],
+                "test": [{"path": "cable/test/good/001.png"}],
+            }
+            split_path = root / "split.json"
+            split_path.write_text(json.dumps(split), encoding="utf-8")
+            payload = rescore_directory(split_path, maps, root / "scores.json", extra={"method": "grabcut"})
+        self.assertEqual(payload["method"], "grabcut")
+        self.assertLess(payload["test"]["cable/test/good/001.png"]["detection_score"], 0.5)
+        self.assertFalse(payload["labels_used_for_threshold"])
+
+
 if __name__ == "__main__":
     unittest.main()
