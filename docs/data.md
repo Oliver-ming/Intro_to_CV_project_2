@@ -25,10 +25,10 @@ data/mvtec_anomaly_detection/<category>/{train,test,ground_truth}/
 
 ```bash
 wget -O data/archives/VisA_20220922.tar \
-  "https://amazon-visual-anomaly.s3.us-west-2.amazonaws.com/VisA_20220922.tar"
+  "https://huggingface.co/datasets/XiranZhao/iad/resolve/main/VisA_20220922.tar"
 ```
 
-官方 1-class 划分放到：
+官方 S3 在这台机器上只有几 KB/s。上面这份与官方归档同为 1.93GB。官方 1-class 划分放到：
 
 ```text
 data/VisA_pytorch/1cls/<category>/{train,test,ground_truth}/
