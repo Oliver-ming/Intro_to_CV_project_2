@@ -83,3 +83,9 @@
 - 协议测试和差分冒烟测试 5 项通过。
 - 接着用 `scripts/run_part1.sh` 跑全部 15 类。完成标记是日志里的 `PART1_DONE`。
 - 在 GPU 1 上启动 AnomalyDINO 官方复现：dinov2_vits14、448、agnostic、1/2/4/8-shot、3 个种子、`--faiss_on_cpu`、同时算分割。完成标记是 `ANOMALYDINO_MVTEC_DONE`。Part 1 的自编码器仍用 GPU 0。
+
+### 评测和单张图 demo
+
+- `src/inspection/metrics.py` 提供图像 AUROC、AP、工作点上的误报率，以及积分上限 0.3 的 AUPRO。合成例子测试已通过。
+- `src/demo/inspect.py` 对一张图跑 Part 1 差分，写出叠加热力图。若该类的 `scores.json` 已有工作点，同时给出 OK/NG。
+- AnomalyCLIP 仓库没有附带 `epoch_15.pth`。提示权重要在空闲 GPU 上按官方设定训练，不占用正在跑的 Part 1 和 AnomalyDINO。
