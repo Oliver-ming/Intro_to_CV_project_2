@@ -105,3 +105,8 @@
 - `src/part3/multiscale.py` 把粗分辨率热力图放大到细分辨率网格，再按验证像素做标准化后平均。细图上的尖峰在粗图平坦时仍然保留。
 - `src/inspection/aggregate_seeds.py` 读取 AnomalyDINO 每个种子的均值指标，汇总成均值和样本标准差，供 1/2/4/8-shot 的三次重复使用。
 - 相关单元测试已通过。
+
+### 自采划分和 VisA 复现
+
+- `src/inspection/wild.py` 按约定把受控正常图分成 20 张参考池和 10 张阈值验证图。光照和背景偏移只进测试集。单元测试已通过。
+- 在 GPU 3 上启动 VisA 的 AnomalyDINO，协议与 MVTec 相同。完成标记是 `ANOMALYDINO_VISA_DONE`。
