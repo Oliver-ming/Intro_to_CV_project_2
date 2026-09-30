@@ -186,3 +186,4 @@
 - 自编码器 15 类在 256 热力图上的像素 AP 均值是 0.224。最低是 cable 0.038、screw 0.047、transistor 0.100，最高是 hazelnut 0.607、grid 0.421、wood 0.353。像素 AUROC 均值 0.819 时，AP 仍然低，因为缺陷像素少。
 - `collect_tables` 现在会读 15 类多尺度融合。`outputs/tables/comparison.json` 里差分 5 类、自编码器 15 类、GrabCut 1 类、AnomalyDINO 官方表 2 份、融合 15 类。
 - VisA、448、1-shot、种子 0 的官方全分辨率结果写出来了。图像级 AUROC 0.864，AP 0.880，像素 AUROC 0.975，AUPRO 0.907。MVTec 同设置的图像级 AUROC 是 0.970，像素 AUROC 0.965，AUPRO 0.918。跨数据集主要掉在整图检测。macaroni2 图像级 AUROC 只有 0.602，像素 AUROC 却有 0.981，AUPRO 0.897。官方分割 F1 是测试曲线上的最大值，VisA 0.425，MVTec 0.589，这不是我们的工作点。
+- macaroni2 的 `bad/055.JPG` 热力图打在右侧两块通心粉的缺口上，检测分数 0.242。这一类正常图分数均值 0.197，范围 0.151 到 0.285；缺陷图均值 0.204，范围 0.164 到 0.272。0.242 已经高于缺陷图均值，但仍落在正常图的范围里。图在 `outputs/demo/visa_macaroni2_055.png`。
