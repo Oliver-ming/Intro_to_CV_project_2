@@ -51,6 +51,38 @@ def build_fusion(
     return fuse_score_files(visual_path, prompt_path, out_path)
 
 
+def fuse_ready_categories(
+    categories: list[str],
+    visual_measurements: Path,
+    visual_validation_dir: Path,
+    prompt_image_scores: Path,
+    prompt_validation_dir: Path,
+    data_root: Path,
+    out_dir: Path,
+) -> list[str]:
+    """Fuse categories whose visual and prompt files both exist. Skip finished outputs."""
+    if not prompt_image_scores.is_file() or not visual_measurements.is_file():
+        return []
+    written = []
+    for category in categories:
+        out_path = out_dir / f"{category}.json"
+        visual_validation = visual_validation_dir / category / "scores.json"
+        prompt_validation = prompt_validation_dir / category / "scores.json"
+        if out_path.is_file() or not visual_validation.is_file() or not prompt_validation.is_file():
+            continue
+        build_fusion(
+            visual_measurements,
+            visual_validation,
+            prompt_image_scores,
+            prompt_validation,
+            data_root,
+            category,
+            out_path,
+        )
+        written.append(category)
+    return written
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--visual-measurements", type=Path, required=True)

@@ -189,3 +189,4 @@
 - macaroni2 的 `bad/055.JPG` 热力图打在右侧两块通心粉的缺口上，检测分数 0.242。这一类正常图分数均值 0.197，范围 0.151 到 0.285；缺陷图均值 0.204，范围 0.164 到 0.272。0.242 已经高于缺陷图均值，但仍落在正常图的范围里。图在 `outputs/demo/visa_macaroni2_055.png`。
 - 差分如果发现该类已经有 `scores.json` 就跳过，并在新跑完的类别上直接写 `metrics.json`。正在跑的那次进程还是旧代码，不会中途改行为。`tests/test_difference_smoke.py` 确认已完成的类别不会重算。
 - VisA 种子 0 的 patch 网格和官方全分辨率对过了。图像级 AUROC 完全一致。像素 AUROC 平均低 0.021，AUPRO 平均低 0.056：patch 网格 0.953 / 0.851，官方 0.975 / 0.907。和 MVTec 上低 0.021、0.057 的差距一样。这几路长任务都还在。
+- 提示和视觉分数的批量融合写在 `fuse_ready_categories`。`scripts/run_prompt_fusion.sh` 在 AnomalyCLIP 的 MVTec 测试分数和验证尾图分数都齐之前退出。齐了之后按 15 类写出融合文件，并打印 `PROMPT_FUSION_DONE`。现在测试分数还没有，脚本按预期退出。已经写好的类别不会重算。
