@@ -223,3 +223,4 @@
 - 448、1-shot 里已经有三个种子的 5 类是 bottle、cable、capsule、carpet、grid。三类种子的图像级 AUROC 均值是 0.972、0.945、0.965，总均值 0.961，标准差 0.014。种子 1 偏低是因为 capsule。这还不是 15 类。
 - zipper 差分的示意：`combined/001` 判 NG，分数 0.699，热点在拉链下端断开的齿上；`good/008` 判 OK，分数 0.410。图在 `outputs/demo/zipper_difference_ng.png` 和 `zipper_difference_ok.png`。151 张里有 80 张缺陷被判 NG，27 张正常图被判 OK。
 - hazelnut 的 1-shot 三个种子图像级 AUROC 是 0.982、0.993、0.966，均值 0.980，标准差 0.013。加上它，已经有三个种子的 6 类均值是 0.974、0.953、0.965，总均值 0.964，标准差 0.011。还差 9 类。
+- 这 6 类在种子 0 上，448 和 672 的官方图像级 AUROC 是 0.974 对 0.975，AUPRO 是 0.955 对 0.960。分辨率差几乎不在这 6 类里。672 的定位提升主要在还没有第三个种子的 zipper 和 screw。448、672、VisA、AnomalyCLIP 训练和 672 验证尾图都还在跑。
