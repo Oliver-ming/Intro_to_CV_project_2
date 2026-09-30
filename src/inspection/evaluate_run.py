@@ -42,20 +42,30 @@ def pixel_metrics(
     data_root: Path,
     map_dir: Path,
     integration_limit: float = 0.3,
+    align_to: str = "mask",
 ) -> dict:
+    if align_to not in {"mask", "map"}:
+        raise ValueError("align_to must be 'mask' or 'map'")
     maps = []
     masks = []
     for record in split["test"]:
         anomaly = np.load(map_dir / map_filename(record["path"]))
         if record["mask"] is None:
-            image_path = data_root / record["path"]
-            sample = cv2.imread(str(image_path), cv2.IMREAD_GRAYSCALE)
-            if sample is None:
-                raise FileNotFoundError(image_path)
-            mask = np.zeros(sample.shape, dtype=np.uint8)
+            if align_to == "map":
+                mask = np.zeros(anomaly.shape[:2], dtype=np.uint8)
+            else:
+                image_path = data_root / record["path"]
+                sample = cv2.imread(str(image_path), cv2.IMREAD_GRAYSCALE)
+                if sample is None:
+                    raise FileNotFoundError(image_path)
+                mask = np.zeros(sample.shape, dtype=np.uint8)
         else:
             mask = read_mask(data_root / record["mask"])
-        resized = cv2.resize(anomaly, (mask.shape[1], mask.shape[0]), interpolation=cv2.INTER_LINEAR)
+        if align_to == "map":
+            mask = cv2.resize(mask, (anomaly.shape[1], anomaly.shape[0]), interpolation=cv2.INTER_NEAREST)
+            resized = anomaly
+        else:
+            resized = cv2.resize(anomaly, (mask.shape[1], mask.shape[0]), interpolation=cv2.INTER_LINEAR)
         maps.append(resized)
         masks.append(mask)
     flat_labels = np.concatenate([(mask > 0).astype(np.uint8).ravel() for mask in masks])

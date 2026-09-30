@@ -148,5 +148,5 @@
 - pill 后来也齐了。448 / 672 / 融合的图像级 AUROC 是 0.915 / 0.927 / 0.954。加上 pill 后这 9 类的平均 AUROC 是 0.973 / 0.975 / 0.980。自编码器 metal_nut 的图像级 AUROC 只有 0.356：正常图平均分 0.089，缺陷图 0.081，排序是反的。115 张测试图，误报率 1.0。
 - 这 9 类在 672 的 patch 网格上又算了像素指标，掩码缩小到该网格，不是官方全分辨率。平均像素 AUROC / AUPRO：把 448 放大到这个网格是 0.976 / 0.944，原生 672 是 0.968 / 0.918，融合是 0.977 / 0.945。融合的图像级 AUROC 仍是 0.980。数字在 `outputs/part3/multiscale/1shot_seed0_pixels.json`。
 - 自编码器 pill 的图像级 AUROC 0.745，AP 0.942，167 张，误报率 1.0。差分 capsule 的图像级 AUROC 0.613，AP 0.868，132 张，误报率 1.0。
-- 自编码器又写完 screw 和 tile。screw 图像级 AUROC 0.580，AP 0.815，160 张，误报率 1.0。tile 是 0.897 / 0.962 / 1.0，117 张。目前 11 类平均图像级 AUROC 0.688，AP 0.868，误报率 0.996。AnomalyCLIP 的 `epoch_15.pth` 还没有。
+- 自编码器又写完 screw 和 tile。screw 图像级 AUROC 0.580，AP 0.815，160 张，误报率 1.0。tile 是 0.897 / 0.962 / 1.0，117 张。toothbrush 图像级 AUROC 0.564。这 12 类在 256 的热力图上算了像素指标，掩码缩小到热力图，不是全分辨率。平均图像级 AUROC 0.678，AP 0.861，像素 AUROC 0.831，像素 AP 0.231，AUPRO 0.667，误报率 0.954。AnomalyCLIP 的 `epoch_15.pth` 还没有。
 - AnomalyDINO 1-shot 种子 0 的 cable、transistor 用 GrabCut 清了背景，照片先缩到 256，分数仍是最高 1% patch。像素指标在 patch 网格上，不是官方全分辨率。cable 图像级 AUROC 从 0.932 升到 0.942，像素 AUROC 从 0.906 升到 0.921，AUPRO 从 0.830 降到 0.770。transistor 图像级 AUROC 从 0.937 降到 0.902，像素 AUROC 从 0.809 降到 0.740，AUPRO 从 0.532 降到 0.474。数字在 `outputs/part3/grabcut/anomalydino_1shot_seed0.json`。
