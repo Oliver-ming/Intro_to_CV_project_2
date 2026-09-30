@@ -69,3 +69,10 @@
 
 - `VisA_20220922.tar` 已下完，大小 1929840640 字节，与官方对象一致。
 - 解压到 `data/visa_raw`。`src/inspection/prepare_visa.py` 按 `split_csv/1cls.csv` 链到 `data/VisA_pytorch/1cls`，异常类目录用 `test/bad`，掩码用 `<stem>.png`，与 AnomalyDINO 的 VisA 读取方式一致。
+
+### 设定完成目标
+
+- 目标是做完整个 Project 2，不只做 Part 1。
+- MVTec 归档已到齐，大小 5264982680 字节。正在解压。
+- 训练和长实验至少隔 15 分钟才查看，完成与否看进程自己打印的结束标记，例如 `PART1_DONE`。
+- 解压后的类别直接落在 `data/` 下，已移到 `data/mvtec_anomaly_detection/`。15 类划分已写入 `outputs/splits/mvtec/`：每类验证图 10 张，官方前缀 48 张，无重叠。toothbrush 的参考池是 50 张。
