@@ -8,6 +8,7 @@ import numpy as np
 
 from src.part3.background import grabcut_foreground, suppress_background
 from src.part3.fusion import fuse_maps
+from src.part3.multiscale import fuse_resolutions
 
 
 class BackgroundTest(unittest.TestCase):
@@ -30,6 +31,16 @@ class FusionTest(unittest.TestCase):
         right[1, 1] = 2
         fused = fuse_maps(left, right, left_mean=0, left_std=1, right_mean=0, right_std=1)
         self.assertEqual(int(np.argmax(fused)), int(np.ravel_multi_index((1, 1), fused.shape)))
+
+
+class MultiScaleTest(unittest.TestCase):
+    def test_fine_peak_survives_a_flat_coarse_map(self) -> None:
+        fine = np.zeros((8, 8), dtype=np.float32)
+        fine[3, 5] = 8
+        coarse = np.zeros((2, 2), dtype=np.float32)
+        fused = fuse_resolutions(fine, coarse, 0, 1, 0, 1)
+        self.assertEqual(fused.shape, fine.shape)
+        self.assertEqual(int(np.argmax(fused)), int(np.ravel_multi_index((3, 5), fused.shape)))
 
 
 if __name__ == "__main__":
