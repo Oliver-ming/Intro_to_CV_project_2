@@ -76,3 +76,9 @@
 - MVTec 归档已到齐，大小 5264982680 字节。正在解压。
 - 训练和长实验至少隔 15 分钟才查看，完成与否看进程自己打印的结束标记，例如 `PART1_DONE`。
 - 解压后的类别直接落在 `data/` 下，已移到 `data/mvtec_anomaly_detection/`。15 类划分已写入 `outputs/splits/mvtec/`：每类验证图 10 张，官方前缀 48 张，无重叠。toothbrush 的参考池是 50 张。
+
+### 装好环境并启动 Part 1
+
+- PyTorch 2.11.0+cu128 安装成功，CUDA 可用，看到 8 张 RTX 4090。
+- 协议测试和差分冒烟测试 5 项通过。
+- 接着用 `scripts/run_part1.sh` 跑全部 15 类。完成标记是日志里的 `PART1_DONE`。
