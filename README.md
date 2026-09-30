@@ -52,3 +52,11 @@ $PY -m src.demo.inspect \
 ## Part 2
 
 AnomalyDINO 的 MVTec、VisA 和 672 分辨率复现分别由 `scripts/run_anomalydino_mvtec.sh`、`scripts/run_anomalydino_visa.sh`、`scripts/run_anomalydino_mvtec_672.sh` 启动。AnomalyCLIP 的提示训练和测试是 `scripts/run_anomalyclip_train.sh` 与 `scripts/run_anomalyclip_test.sh`。长任务结束时会在各自日志里打印 `*_DONE`。
+
+已经写完的指标可以收成一张表。还没结束的类别会被跳过：
+
+```bash
+$PY -m src.inspection.collect_tables
+```
+
+输出在 `outputs/tables/comparison.json`。

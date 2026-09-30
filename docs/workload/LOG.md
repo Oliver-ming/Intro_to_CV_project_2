@@ -132,4 +132,5 @@
 - `python -m src.part3.apply_score_fusion` 读两份分数文件，写出融合后的检测分数和 OK/NG。共享图像上的单元测试已通过。这轮没有再读长任务日志。
 - demo 叠图会写成带分数的 PNG，单元测试确认文件非空。`python -m src.inspection.completion` 只根据日志里的 `*_DONE` 判断任务是否结束。
 - 错误判定按原因归类：正常图的边角高响应算背景或边界，漏检且缺陷像素很少算细缺陷。`tests/test_failures.py` 已通过。这轮没有读长任务日志。
-- bottle 差分的图像级结果：AUROC 0.910，AP 0.970，83 张测试图。工作点下正常测试图的误报率是 1.0，最大像素很容易超过像素均值加 3 倍标准差。像素级 AUROC 0.922，AP 0.453，AUPRO 0.801（积分上限 0.3，最多 256 个分位点）。数字写在 `outputs/part1/difference/bottle/metrics.json`。demo 叠图写到 `outputs/demo/bottle_broken_large.png`。
+- bottle 差分的图像级结果：AUROC 0.910，AP 0.970，83 张测试图。工作点下正常测试图的误报率是 1.0，最大像素很容易超过像素均值加 3 倍标准差。像素级 AUROC 0.922，AP 0.453，AUPRO 0.801（积分上限 0.3）。数字写在 `outputs/part1/difference/bottle/metrics.json`。demo 叠图写到 `outputs/demo/bottle_broken_large.png`。
+- AUPRO 改为和 MVTec / AnomalyDINO 相同的做法：所有像素按分数排序后一次累加，不再抽 256 个分位点。bottle 的 AUPRO 从近似值 0.8009 变成精确值 0.8010。`python -m src.inspection.collect_tables` 会把已经写好的 Part 1 指标和 AnomalyDINO 的 `metrics_seed` 收成 `outputs/tables/comparison.json`，缺的类别会跳过。当前表里只有 bottle 差分。MVTec AD 2 的公开集仍没有可用的快速镜像，官方归档约 30GB，不重新开始那次过慢的下载。

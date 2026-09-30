@@ -35,9 +35,29 @@ def false_positive_rate(labels: list[str], decisions: list[str]) -> float:
     return sum(decision == "NG" for _, decision in ok) / len(ok)
 
 
-def _regions(mask: np.ndarray) -> list[np.ndarray]:
-    labeled, count = ndimage.label(mask.astype(bool), structure=np.ones((3, 3), dtype=int))
-    return [np.flatnonzero(labeled == index) for index in range(1, count + 1)]
+def _integrate_until(fprs: np.ndarray, pros: np.ndarray, limit: float) -> float:
+    """Trapezoid up to ``limit``, interpolating the cutoff the way MVTec does."""
+    xs = np.asarray(fprs, dtype=np.float64)
+    ys = np.asarray(pros, dtype=np.float64)
+    if xs.size < 2 or xs[-1] < limit:
+        return float("nan")
+    insert_at = int(np.searchsorted(xs, limit, side="left"))
+    correction = 0.0
+    if insert_at >= xs.size or xs[insert_at] != limit:
+        if insert_at == 0 or insert_at >= xs.size:
+            return float("nan")
+        span = xs[insert_at] - xs[insert_at - 1]
+        y_at_limit = ys[insert_at - 1] + (ys[insert_at] - ys[insert_at - 1]) * (limit - xs[insert_at - 1]) / span
+        correction = 0.5 * (y_at_limit + ys[insert_at - 1]) * (limit - xs[insert_at - 1])
+        xs = xs[:insert_at]
+        ys = ys[:insert_at]
+    else:
+        xs = xs[: insert_at + 1]
+        ys = ys[: insert_at + 1]
+    area = 0.0
+    if xs.size >= 2:
+        area = float(np.sum(0.5 * (ys[1:] + ys[:-1]) * (xs[1:] - xs[:-1])))
+    return (area + correction) / limit
 
 
 def aupro(
@@ -45,7 +65,12 @@ def aupro(
     ground_truth_masks: list[np.ndarray],
     integration_limit: float = 0.3,
 ) -> float:
-    """Area under the PRO curve, normalized by ``integration_limit``."""
+    """Area under the PRO curve, normalized by ``integration_limit``.
+
+    The curve is the one used by MVTec and AnomalyDINO: sort every pixel once,
+    then accumulate false positives on normal pixels and per-region overlap.
+    Images may differ in height and width.
+    """
     if len(anomaly_maps) != len(ground_truth_masks) or not anomaly_maps:
         raise ValueError("anomaly maps and ground-truth masks must be paired and non-empty")
     maps = [np.asarray(anomaly, dtype=np.float64) for anomaly in anomaly_maps]
@@ -54,45 +79,39 @@ def aupro(
         if anomaly.shape != mask.shape:
             raise ValueError(f"shape mismatch {anomaly.shape} vs {mask.shape}")
 
-    region_ids: list[tuple[int, np.ndarray]] = []
-    normal_ids: list[tuple[int, np.ndarray]] = []
-    for index, (anomaly, mask) in enumerate(zip(maps, masks)):
-        region_ids.extend((index, pixels) for pixels in _regions(mask))
-        normal_ids.append((index, np.flatnonzero(~mask)))
-    if not region_ids:
-        return float("nan")
-    normal_count = sum(pixels.size for _, pixels in normal_ids)
-    if normal_count == 0:
+    score_parts: list[np.ndarray] = []
+    false_positive_parts: list[np.ndarray] = []
+    overlap_parts: list[np.ndarray] = []
+    region_count = 0
+    normal_count = 0
+    structure = np.ones((3, 3), dtype=int)
+    for anomaly, mask in zip(maps, masks):
+        labeled, n_components = ndimage.label(mask, structure=structure)
+        region_count += int(n_components)
+        normal = labeled == 0
+        normal_count += int(normal.sum())
+        overlap = np.zeros(anomaly.shape, dtype=np.float64)
+        for component in range(1, n_components + 1):
+            region = labeled == component
+            overlap[region] = 1.0 / float(region.sum())
+        score_parts.append(anomaly.ravel())
+        false_positive_parts.append(normal.ravel().astype(np.float64))
+        overlap_parts.append(overlap.ravel())
+    if region_count == 0 or normal_count == 0:
         return float("nan")
 
-    pooled = np.concatenate([anomaly.ravel() for anomaly in maps])
-    if pooled.size > 256:
-        thresholds = np.unique(np.quantile(pooled, np.linspace(0.0, 1.0, 256)))[::-1]
-    else:
-        thresholds = np.unique(pooled)[::-1]
-    fprs = [0.0]
-    pros = [0.0]
-    for threshold in thresholds:
-        false_positives = 0
-        overlaps = []
-        for index, pixels in normal_ids:
-            if pixels.size:
-                false_positives += int(np.count_nonzero(maps[index].ravel()[pixels] >= threshold))
-        for index, pixels in region_ids:
-            overlaps.append(float(np.count_nonzero(maps[index].ravel()[pixels] >= threshold)) / pixels.size)
-        fprs.append(false_positives / normal_count)
-        pros.append(float(np.mean(overlaps)))
-
-    order = np.argsort(fprs)
-    fprs_sorted = np.asarray(fprs, dtype=np.float64)[order]
-    pros_sorted = np.asarray(pros, dtype=np.float64)[order]
-    cutoff = fprs_sorted <= integration_limit
-    if cutoff.sum() < 2:
-        return float("nan")
-    xs = fprs_sorted[cutoff]
-    ys = pros_sorted[cutoff]
-    if xs[-1] < integration_limit:
-        xs = np.append(xs, integration_limit)
-        ys = np.append(ys, ys[-1])
-    area = float(np.trapezoid(ys, xs))
-    return area / integration_limit
+    scores = np.concatenate(score_parts)
+    false_positives = np.concatenate(false_positive_parts)
+    overlaps = np.concatenate(overlap_parts)
+    order = np.argsort(scores, kind="mergesort")[::-1]
+    scores = scores[order]
+    fprs = np.cumsum(false_positives[order]) / normal_count
+    pros = np.cumsum(overlaps[order]) / region_count
+    keep = np.empty(scores.size, dtype=bool)
+    keep[:-1] = scores[:-1] != scores[1:]
+    keep[-1] = True
+    fprs = np.clip(fprs[keep], 0.0, 1.0)
+    pros = np.clip(pros[keep], 0.0, 1.0)
+    fprs = np.concatenate((np.array([0.0]), fprs, np.array([1.0])))
+    pros = np.concatenate((np.array([0.0]), pros, np.array([1.0])))
+    return _integrate_until(fprs, pros, integration_limit)
