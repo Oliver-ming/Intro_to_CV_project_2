@@ -30,5 +30,28 @@ class DifferenceSmokeTest(unittest.TestCase):
         self.assertTrue(70 <= peak[1] <= 85)
 
 
+class DifferenceSkipTest(unittest.TestCase):
+    def test_finished_category_is_not_recomputed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            split_path = root / "bottle.json"
+            split_path.write_text('{"category": "bottle", "reference_pool": [], "threshold_validation": [], "test": []}')
+            category = root / "out" / "bottle"
+            category.mkdir(parents=True)
+            (category / "scores.json").write_text("{}")
+            from src.part1 import run_difference
+
+            original = run_difference.difference_map
+
+            def fail(*_args, **_kwargs):
+                raise AssertionError("finished category was recomputed")
+
+            run_difference.difference_map = fail
+            try:
+                run_difference.run_category(split_path, root, root / "out", 256)
+            finally:
+                run_difference.difference_map = original
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -9,6 +9,7 @@ from pathlib import Path
 import numpy as np
 from tqdm import tqdm
 
+from src.inspection.evaluate_run import image_metrics, pixel_metrics
 from src.inspection.reporting import write_scores
 from src.inspection.splits import load_split
 from src.part1.difference import difference_map
@@ -33,10 +34,23 @@ def _collect_maps(
     return maps
 
 
+def write_category_metrics(split: dict, scores_path: Path, data_root: Path) -> dict:
+    """Image metrics plus pixel metrics on the saved 256 map."""
+    scores = json.loads(scores_path.read_text(encoding="utf-8"))
+    summary = image_metrics(split, scores)
+    summary.update(pixel_metrics(split, data_root, scores_path.parent / "maps", align_to="map"))
+    summary["pixel_resolution"] = "anomaly_map"
+    (scores_path.parent / "metrics.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    return summary
+
+
 def run_category(split_path: Path, data_root: Path, out_dir: Path, image_size: int) -> None:
     split = load_split(split_path)
     category = split["category"]
     category_dir = out_dir / category
+    if (category_dir / "scores.json").is_file():
+        print(f"skip difference: {category}")
+        return
     map_dir = category_dir / "maps"
     map_dir.mkdir(parents=True, exist_ok=True)
     references = [data_root / relative for relative in split["reference_pool"]]
@@ -56,6 +70,7 @@ def run_category(split_path: Path, data_root: Path, out_dir: Path, image_size: i
             "labels_used_for_threshold": False,
         },
     )
+    write_category_metrics(split, category_dir / "scores.json", data_root)
 
 
 def main() -> None:
