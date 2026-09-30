@@ -21,6 +21,19 @@ from src.part3.suppress_patches import suppress_patch_grid
 from src.part3.targets import needs_grabcut
 
 
+def _for_grabcut(image: np.ndarray, size: int = 256) -> np.ndarray:
+    """Shrink the photo before GrabCut. The mask is later resized to the patch grid."""
+    height, width = image.shape[:2]
+    scale = size / max(height, width)
+    if scale >= 1:
+        return image
+    return cv2.resize(
+        image,
+        (max(1, int(round(width * scale))), max(1, int(round(height * scale)))),
+        interpolation=cv2.INTER_AREA,
+    )
+
+
 def _paired_scores(
     map_root: Path,
     data_root: Path,
@@ -38,7 +51,7 @@ def _paired_scores(
         if not grid_path.is_file():
             continue
         grid = np.load(grid_path)
-        image = read_rgb(data_root / record["path"])
+        image = _for_grabcut(read_rgb(data_root / record["path"]))
         suppressed = suppress_patch_grid(grid, image)
         labels.append(1 if record["label"] == "NG" else 0)
         before_scores.append(mean_top1p(grid))
