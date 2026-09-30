@@ -7,7 +7,13 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from src.inspection.collect_tables import collect_anomalyclip, collect_anomalydino, collect_part1, write_comparison
+from src.inspection.collect_tables import (
+    collect_anomalyclip,
+    collect_anomalydino,
+    collect_multiscale,
+    collect_part1,
+    write_comparison,
+)
 
 
 class CollectTablesTest(unittest.TestCase):
@@ -62,6 +68,33 @@ class CollectTablesTest(unittest.TestCase):
             )
             rows = collect_anomalyclip(root)
             self.assertEqual(rows[0]["per_category"][0]["category"], "bottle")
+
+    def test_multiscale_averages_each_resolution(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "fusion.json"
+            path.write_text(
+                json.dumps(
+                    [
+                        {
+                            "category": "bottle",
+                            "coarse_448": {"image_auroc": 0.4, "image_ap": 0.4, "pixel_auroc": 0.4, "pixel_ap": 0.4, "aupro": 0.4},
+                            "fine_672": {"image_auroc": 0.6, "image_ap": 0.6, "pixel_auroc": 0.6, "pixel_ap": 0.6, "aupro": 0.6},
+                            "fused": {"image_auroc": 0.8, "image_ap": 0.8, "pixel_auroc": 0.8, "pixel_ap": 0.8, "aupro": 0.8},
+                        },
+                        {
+                            "category": "cable",
+                            "coarse_448": {"image_auroc": 0.2, "image_ap": 0.2, "pixel_auroc": 0.2, "pixel_ap": 0.2, "aupro": 0.2},
+                            "fine_672": {"image_auroc": 0.2, "image_ap": 0.2, "pixel_auroc": 0.2, "pixel_ap": 0.2, "aupro": 0.2},
+                            "fused": {"image_auroc": 0.4, "image_ap": 0.4, "pixel_auroc": 0.4, "pixel_ap": 0.4, "aupro": 0.4},
+                        },
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            summary = collect_multiscale(path)
+            self.assertEqual(summary["n_categories"], 2)
+            self.assertAlmostEqual(summary["mean"]["fused"]["image_auroc"], 0.6)
+            self.assertEqual(collect_multiscale(Path(tmp) / "missing.json")["n_categories"], 0)
 
 
 if __name__ == "__main__":

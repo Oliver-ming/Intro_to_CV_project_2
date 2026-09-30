@@ -2,8 +2,9 @@
 
 Part 1 rows come from ``metrics.json`` written by ``evaluate_run``.
 AnomalyDINO rows come from each ``metrics_seed=*.json``. Seeds are averaged
-with the sample standard deviation. Missing files are skipped, so this can
-run before every job has finished.
+with the sample standard deviation. The multi-scale file contributes the
+448, 672, and fused means. Missing files are skipped, so this can run
+before every job has finished.
 """
 
 from __future__ import annotations
@@ -115,6 +116,29 @@ def collect_anomalydino(results_root: Path) -> list[dict]:
     return table
 
 
+FUSION_BRANCHES = ("coarse_448", "fine_672", "fused")
+FUSION_KEYS = ("image_auroc", "image_ap", "pixel_auroc", "pixel_ap", "aupro")
+
+
+def collect_multiscale(path: Path) -> dict:
+    """Mean the 448, 672, and fused scores stored for one finished shot."""
+    if not path.is_file():
+        return {"n_categories": 0, "per_category": {}, "mean": {}}
+    rows = json.loads(path.read_text(encoding="utf-8"))
+    per_category = {}
+    for row in rows:
+        per_category[row["category"]] = {
+            branch: {key: float(row[branch][key]) for key in FUSION_KEYS} for branch in FUSION_BRANCHES
+        }
+    mean = {}
+    for branch in FUSION_BRANCHES:
+        mean[branch] = {}
+        for key in FUSION_KEYS:
+            values = [per_category[category][branch][key] for category in per_category]
+            mean[branch][key] = _mean(values)
+    return {"n_categories": len(per_category), "per_category": per_category, "mean": mean}
+
+
 def collect_anomalyclip(directory: Path) -> list[dict]:
     """Read metrics.json files written after the AnomalyCLIP test hook."""
     rows = []
@@ -136,11 +160,13 @@ def write_comparison(
     part1_dirs: dict[str, Path],
     anomalydino_root: Path | None,
     anomalyclip_dir: Path | None = None,
+    multiscale_path: Path | None = None,
 ) -> dict:
     table = {
         "part1": {name: collect_part1(path) for name, path in part1_dirs.items()},
         "anomalydino": collect_anomalydino(anomalydino_root) if anomalydino_root else [],
         "anomalyclip": collect_anomalyclip(anomalyclip_dir) if anomalyclip_dir else [],
+        "multiscale": collect_multiscale(multiscale_path) if multiscale_path else {"n_categories": 0, "per_category": {}, "mean": {}},
         "anomalydino_keys": list(SEED_SUMMARY_KEYS),
     }
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -165,12 +191,14 @@ def main() -> None:
         },
         root / "third_party/AnomalyDINO",
         root / "outputs/part2/anomalyclip",
+        root / "outputs/part3/multiscale/1shot_seed0_all15.json",
     )
     part1_counts = {name: row["n_categories"] for name, row in table["part1"].items()}
     print(json.dumps({
         "part1_categories": part1_counts,
         "anomalydino_rows": len(table["anomalydino"]),
         "anomalyclip_rows": len(table["anomalyclip"]),
+        "multiscale_categories": table["multiscale"]["n_categories"],
     }))
 
 
