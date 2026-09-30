@@ -109,5 +109,28 @@ class FuseScoresTest(unittest.TestCase):
         self.assertGreater(fused[1], fused[0])
 
 
+class ApplyScoreFusionTest(unittest.TestCase):
+    def test_writes_decisions_for_shared_images(self) -> None:
+        import json
+        import tempfile
+        from pathlib import Path
+
+        from src.part3.apply_score_fusion import fuse_score_files
+
+        def pack(values: dict[str, float]) -> dict:
+            return {key: {"detection_score": value, "max_pixel": value, "decision": "OK"} for key, value in values.items()}
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            left = {"validation": pack({"a": 0.1, "b": 0.2}), "test": pack({"c": 0.1, "d": 3.0})}
+            right = {"validation": pack({"a": 0.2, "b": 0.3}), "test": pack({"c": 0.2, "d": 4.0})}
+            (root / "left.json").write_text(json.dumps(left), encoding="utf-8")
+            (root / "right.json").write_text(json.dumps(right), encoding="utf-8")
+            payload = fuse_score_files(root / "left.json", root / "right.json", root / "fused.json")
+        self.assertIn("c", payload["test"])
+        self.assertIn("d", payload["test"])
+        self.assertGreater(payload["test"]["d"]["detection_score"], payload["test"]["c"]["detection_score"])
+
+
 if __name__ == "__main__":
     unittest.main()
