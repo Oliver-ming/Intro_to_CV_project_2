@@ -60,6 +60,28 @@ def inspect_image(
     return payload
 
 
+def overlay_saved_map(
+    image_path: Path,
+    anomaly_path: Path,
+    scores_path: Path,
+    relative: str,
+    out_path: Path,
+) -> dict:
+    """Draw a heatmap that was already saved, using the stored OK/NG decision."""
+    anomaly = np.load(anomaly_path)
+    stored = json.loads(scores_path.read_text(encoding="utf-8"))
+    entry = stored["test"][relative]
+    score = float(entry["detection_score"])
+    decision = entry.get("decision")
+    _overlay(image_path, anomaly, out_path, decision, score)
+    return {
+        "image": str(image_path),
+        "decision": decision,
+        "detection_score": score,
+        "heatmap": str(out_path),
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--image", type=Path, required=True)

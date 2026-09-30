@@ -161,6 +161,7 @@ def main() -> None:
         {
             "difference": root / "outputs/part1/difference",
             "autoencoder": root / "outputs/part1/autoencoder",
+            "grabcut": root / "outputs/part3/grabcut",
         },
         root / "third_party/AnomalyDINO",
         root / "outputs/part2/anomalyclip",

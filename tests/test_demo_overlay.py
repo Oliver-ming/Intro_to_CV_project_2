@@ -29,6 +29,26 @@ class OverlayTest(unittest.TestCase):
         self.assertEqual(saved.shape, (64, 64, 3))
         self.assertGreater(int(saved.max()), 0)
 
+    def test_saved_map_uses_the_stored_decision(self) -> None:
+        import json
+
+        from src.demo.inspect import overlay_saved_map
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            image = root / "input.png"
+            cv2.imwrite(str(image), np.zeros((32, 32, 3), dtype=np.uint8))
+            anomaly = root / "map.npy"
+            np.save(anomaly, np.ones((8, 8), dtype=np.float32))
+            scores = root / "scores.json"
+            scores.write_text(
+                json.dumps({"test": {"cable/test/bent_wire/000.png": {"detection_score": 0.5, "decision": "NG"}}}),
+                encoding="utf-8",
+            )
+            payload = overlay_saved_map(image, anomaly, scores, "cable/test/bent_wire/000.png", root / "out.png")
+            self.assertEqual(payload["decision"], "NG")
+            self.assertGreater(Path(payload["heatmap"]).stat().st_size, 0)
+
 
 if __name__ == "__main__":
     unittest.main()
