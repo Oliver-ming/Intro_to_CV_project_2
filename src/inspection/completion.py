@@ -12,6 +12,7 @@ MARKERS = {
     "anomalydino_visa": "ANOMALYDINO_VISA_DONE",
     "anomalyclip_train": "ANOMALYCLIP_TRAIN_DONE",
     "anomalyclip_test": "ANOMALYCLIP_TEST_DONE",
+    "anomalydino_heldout": "ANOMALYDINO_HELDOUT_DONE",
 }
 
 LOGS = {
@@ -21,6 +22,7 @@ LOGS = {
     "anomalydino_visa": "outputs/part2/anomalydino_visa.log",
     "anomalyclip_train": "outputs/part2/anomalyclip_train.log",
     "anomalyclip_test": "outputs/part2/anomalyclip_test.log",
+    "anomalydino_heldout": "outputs/part2/anomalydino_heldout.log",
 }
 
 

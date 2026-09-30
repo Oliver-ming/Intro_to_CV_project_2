@@ -115,10 +115,32 @@ def collect_anomalydino(results_root: Path) -> list[dict]:
     return table
 
 
-def write_comparison(out_path: Path, part1_dirs: dict[str, Path], anomalydino_root: Path | None) -> dict:
+def collect_anomalyclip(directory: Path) -> list[dict]:
+    """Read metrics.json files written after the AnomalyCLIP test hook."""
+    rows = []
+    if not directory.is_dir():
+        return rows
+    for path in sorted(directory.glob("**/metrics.json")):
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        categories = payload.get("per_category")
+        if not isinstance(categories, list) or not categories:
+            continue
+        if not isinstance(categories[0], dict) or "category" not in categories[0]:
+            continue
+        rows.append({"path": str(path), **payload})
+    return rows
+
+
+def write_comparison(
+    out_path: Path,
+    part1_dirs: dict[str, Path],
+    anomalydino_root: Path | None,
+    anomalyclip_dir: Path | None = None,
+) -> dict:
     table = {
         "part1": {name: collect_part1(path) for name, path in part1_dirs.items()},
         "anomalydino": collect_anomalydino(anomalydino_root) if anomalydino_root else [],
+        "anomalyclip": collect_anomalyclip(anomalyclip_dir) if anomalyclip_dir else [],
         "anomalydino_keys": list(SEED_SUMMARY_KEYS),
     }
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -141,9 +163,14 @@ def main() -> None:
             "autoencoder": root / "outputs/part1/autoencoder",
         },
         root / "third_party/AnomalyDINO",
+        root / "outputs/part2/anomalyclip",
     )
     part1_counts = {name: row["n_categories"] for name, row in table["part1"].items()}
-    print(json.dumps({"part1_categories": part1_counts, "anomalydino_rows": len(table["anomalydino"])}))
+    print(json.dumps({
+        "part1_categories": part1_counts,
+        "anomalydino_rows": len(table["anomalydino"]),
+        "anomalyclip_rows": len(table["anomalyclip"]),
+    }))
 
 
 if __name__ == "__main__":

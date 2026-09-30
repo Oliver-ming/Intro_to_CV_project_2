@@ -15,6 +15,14 @@ if [[ ! -f "$VISA_CKPT" || ! -f "$MVTEC_CKPT" ]]; then
 fi
 cd "$ROOT/third_party/AnomalyCLIP"
 export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-5}"
+"$PY" - <<PY
+import sys
+sys.path.insert(0, "$ROOT")
+from pathlib import Path
+from src.part2.ensure_anomalyclip_metrics import ensure_anomalyclip_metrics
+changed = ensure_anomalyclip_metrics(Path("test.py"))
+print("anomalyclip metrics hook", "inserted" if changed else "already present")
+PY
 exec > >(tee -a "$LOG") 2>&1
 echo "ANOMALYCLIP_TEST_START $(date -Is)"
 "$PY" test.py \

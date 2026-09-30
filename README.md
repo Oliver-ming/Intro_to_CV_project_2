@@ -60,3 +60,9 @@ $PY -m src.inspection.collect_tables
 ```
 
 输出在 `outputs/tables/comparison.json`。
+
+AnomalyDINO 官方流程不给阈值验证图打分。补打分用：
+
+```bash
+bash scripts/run_anomalydino_heldout.sh
+```
