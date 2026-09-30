@@ -1,0 +1,12 @@
+numpy==1.26.4
+opencv-python
+scikit-image
+scipy
+scikit-learn
+matplotlib
+tqdm
+tifffile
+PyYAML
+pandas
+Pillow
+faiss-cpu

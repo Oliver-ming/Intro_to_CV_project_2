@@ -1,0 +1,21 @@
+# Course handout stays on disk and out of the public repository.
+*.pdf
+
+# Upstream checkouts are pinned in third_party/README.md and cloned locally.
+third_party/*
+!third_party/README.md
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.env
+*.egg-info/
+
+# Experiment artifacts
+data/
+outputs/
+weights/
+*.pt
+*.pth
+*.ckpt
