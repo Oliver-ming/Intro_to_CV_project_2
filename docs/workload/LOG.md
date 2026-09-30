@@ -121,3 +121,4 @@
 
 - `src/inspection/efficiency.py` 汇总 AnomalyDINO 测量表里的记忆库构建时间和逐图打分时间。单元测试已通过。
 - `scripts/run_anomalyclip_test.sh` 在两份 `epoch_15.pth` 都存在后，用 VisA 上学到的提示测 MVTec，再用 MVTec 上学到的提示测 VisA。完成标记是 `ANOMALYCLIP_TEST_DONE`。权重还没写完，所以这轮没有启动测试。
+- 记忆库规模按 AnomalyDINO 的 8 个旋转角和 patch 14 估算。1-shot、448 分辨率的上界是 8192 个 patch 向量。demo 叠图上会写检测分数，有工作点时同时写 OK/NG。

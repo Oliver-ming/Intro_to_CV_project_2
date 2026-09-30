@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from src.inspection.efficiency import summarize_measurements
+from src.inspection.efficiency import memory_bank_slots, summarize_measurements
 
 
 class EfficiencyTest(unittest.TestCase):
@@ -23,6 +23,9 @@ class EfficiencyTest(unittest.TestCase):
         self.assertEqual(summary["n_images"], 2)
         self.assertAlmostEqual(summary["memory_bank_seconds_mean"], 1.0)
         self.assertAlmostEqual(summary["scoring_seconds_mean"], 0.3)
+
+    def test_one_shot_448_bank_has_eight_rotations(self) -> None:
+        self.assertEqual(memory_bank_slots(1, 448), 8 * 32 * 32)
 
 
 if __name__ == "__main__":

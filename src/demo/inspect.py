@@ -14,7 +14,7 @@ from src.inspection.threshold import decide, mean_top1p
 from src.part1.difference import difference_map, image_score
 
 
-def _overlay(image_path: Path, anomaly: np.ndarray, destination: Path) -> None:
+def _overlay(image_path: Path, anomaly: np.ndarray, destination: Path, decision: str | None, score: float) -> None:
     bgr = cv2.imread(str(image_path), cv2.IMREAD_COLOR)
     if bgr is None:
         raise FileNotFoundError(image_path)
@@ -24,6 +24,10 @@ def _overlay(image_path: Path, anomaly: np.ndarray, destination: Path) -> None:
     heat_u8 = np.clip(heat / denom * 255.0, 0, 255).astype(np.uint8)
     colored = cv2.applyColorMap(heat_u8, cv2.COLORMAP_JET)
     blended = cv2.addWeighted(bgr, 0.55, colored, 0.45, 0)
+    label = f"score {score:.4f}"
+    if decision is not None:
+        label = f"{decision}  {label}"
+    cv2.putText(blended, label, (12, 28), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2, cv2.LINE_AA)
     destination.parent.mkdir(parents=True, exist_ok=True)
     cv2.imwrite(str(destination), blended)
 
@@ -51,7 +55,7 @@ def inspect_image(
         stored = json.loads(scores_path.read_text(encoding="utf-8"))
         payload["threshold"] = stored["threshold"]
         payload["decision"] = decide(payload["max_pixel"], stored["threshold"])
-    _overlay(image_path, anomaly, out_path)
+    _overlay(image_path, anomaly, out_path, payload["decision"], payload["detection_score"])
     payload["heatmap"] = str(out_path)
     return payload
 

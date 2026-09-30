@@ -38,3 +38,17 @@ $PY -m unittest tests.test_protocol
 ```
 
 Part 1 的差分基线把测试图配准到最接近的正常参考，再用 RGB 绝对差和 SSIM 残差的平均作为热力图。自编码器只在参考池上训练。
+
+单张图 demo，在该类的 `scores.json` 已经写好时会同时标出 OK/NG：
+
+```bash
+$PY -m src.demo.inspect \
+  --image data/mvtec_anomaly_detection/bottle/test/broken_large/000.png \
+  --split outputs/splits/mvtec/bottle.json \
+  --scores outputs/part1/difference/bottle/scores.json \
+  --out outputs/demo/bottle.png
+```
+
+## Part 2
+
+AnomalyDINO 的 MVTec、VisA 和 672 分辨率复现分别由 `scripts/run_anomalydino_mvtec.sh`、`scripts/run_anomalydino_visa.sh`、`scripts/run_anomalydino_mvtec_672.sh` 启动。AnomalyCLIP 的提示训练和测试是 `scripts/run_anomalyclip_train.sh` 与 `scripts/run_anomalyclip_test.sh`。长任务结束时会在各自日志里打印 `*_DONE`。

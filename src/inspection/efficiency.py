@@ -34,3 +34,14 @@ def peak_gpu_mb(device: str = "cuda:0") -> float | None:
     if not torch.cuda.is_available():
         return None
     return torch.cuda.max_memory_allocated(device) / (1024 * 1024)
+
+
+def memory_bank_slots(shots: int, resolution: int, patch: int = 14, rotations: int = 8) -> int:
+    """Upper bound on stored patch vectors before foreground masking.
+
+    AnomalyDINO's agnostic setting rotates each reference through eight angles.
+    """
+    if shots < 1 or resolution < patch:
+        raise ValueError("shots and resolution must cover at least one patch")
+    grid = resolution // patch
+    return shots * rotations * grid * grid
