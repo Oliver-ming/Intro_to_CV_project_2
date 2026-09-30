@@ -116,3 +116,8 @@
 - 在 GPU 4 上按同一套 1/2/4/8-shot、3 个种子跑 672 分辨率。完成标记是 `ANOMALYDINO_MVTEC_672_DONE`。和 448 的结果目录按分辨率分开。
 - 开始下载 MVTec AD 2 全量归档，约 32.7GB，放到 `data/archives/mvtec_ad_2.tar`。压力测试只用公开测试集，不提交私有榜。
 - 官方 mydrive 只有约 8KB/s，预计要四十多天，下载已中止，127KB 的残片已删除。Hugging Face 上的 FiftyOne 转写不是官方 TESTpub 划分，不拿来代替。压力测试数据等有更快的官方来源再下。
+
+### 效率和 AnomalyCLIP 测试入口
+
+- `src/inspection/efficiency.py` 汇总 AnomalyDINO 测量表里的记忆库构建时间和逐图打分时间。单元测试已通过。
+- `scripts/run_anomalyclip_test.sh` 在两份 `epoch_15.pth` 都存在后，用 VisA 上学到的提示测 MVTec，再用 MVTec 上学到的提示测 VisA。完成标记是 `ANOMALYCLIP_TEST_DONE`。权重还没写完，所以这轮没有启动测试。
