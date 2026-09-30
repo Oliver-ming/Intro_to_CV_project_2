@@ -155,5 +155,6 @@
 - 这 7 类在 patch 网格上的像素指标也齐了，不是官方全分辨率。两次平均像素 AUROC 是 0.968 和 0.967，均值 0.967，标准差 0.001。AUPRO 是 0.913 和 0.909，均值 0.911，标准差 0.003。capsule 的图像级分数掉得厉害，AUPRO 只从 0.894 降到 0.886。
 - 种子 1 的 metal_nut 图像级 AUROC 也是 1.0，AUPRO 两次是 0.832 和 0.832。加上它，这 8 类两次的图像级 AUROC 均值是 0.972，标准差 0.011；像素 AUROC 均值 0.964，标准差 0.001；AUPRO 均值 0.901，标准差 0.003。仍是 patch 网格，不是全分辨率。
 - tile 的 448 / 672 / 融合图像级 AUROC 是 0.999 / 1.000 / 1.000。加上先前的 10 类，这 11 类平均图像级 AUROC 是 0.967 / 0.973 / 0.977，patch 网格 AUPRO 是 0.939 / 0.915 / 0.941。
+- toothbrush 的 448 / 672 / 融合图像级 AUROC 是 0.994 / 0.981 / 0.997。加上它，这 12 类平均图像级 AUROC 是 0.970 / 0.974 / 0.979，patch 网格 AUPRO 是 0.939 / 0.913 / 0.939。还差 transistor、wood、zipper。
 - 自编码器 15 类全部训练并打分完成，结束标记 `AUTOENCODER_DONE`。wood 图像级 AUROC 0.989，AP 0.997，79 张，误报率 0.421，是目前唯一明显低于 1 的工作点。zipper 图像级 AUROC 0.584，AP 0.881，151 张，误报率 1.0。15 类在 256 热力图上的平均是图像级 AUROC 0.674，AP 0.843，像素 AUROC 0.819，AUPRO 0.646，误报率 0.925。种子 1 的 metal_nut 图像级 AUROC 是 1.0。cable 的 1-shot demo 在 `outputs/demo/cable_anomalydino_1shot.png`，判定 NG，检测分数 0.379。
 - AnomalyDINO 1-shot 种子 0 的 cable、transistor 用 GrabCut 清了背景，照片先缩到 256，分数仍是最高 1% patch。像素指标在 patch 网格上，不是官方全分辨率。cable 图像级 AUROC 从 0.932 升到 0.942，像素 AUROC 从 0.906 升到 0.921，AUPRO 从 0.830 降到 0.770。transistor 图像级 AUROC 从 0.937 降到 0.902，像素 AUROC 从 0.809 降到 0.740，AUPRO 从 0.532 降到 0.474。数字在 `outputs/part3/grabcut/anomalydino_1shot_seed0.json`。
