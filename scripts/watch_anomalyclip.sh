@@ -8,6 +8,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 LOG="${LOG:-$ROOT/outputs/part2/anomalyclip_watch.log}"
 VISA_CKPT="$ROOT/outputs/part2/anomalyclip/9_12_4_multiscale/epoch_15.pth"
 MVTEC_METRICS="$ROOT/outputs/part2/anomalyclip/mvtec_zero_shot/metrics.json"
+VISA_METRICS="$ROOT/outputs/part2/anomalyclip/visa_zero_shot/metrics.json"
 HELD_LOG="$ROOT/outputs/part2/anomalyclip_heldout.log"
 mkdir -p "$(dirname "$LOG")"
 cd "$ROOT"
@@ -24,11 +25,10 @@ while true; do
       bash "$ROOT/scripts/run_anomalyclip_heldout.sh" >>"$LOG" 2>&1
     fi
     bash "$ROOT/scripts/run_prompt_fusion.sh" >>"$LOG" 2>&1
-    fusion=$?
-    if [[ "$fusion" -eq 0 ]]; then
-      echo "ANOMALYCLIP_WATCH_DONE $(date -Is)" >>"$LOG"
-      exit 0
-    fi
+  fi
+  if [[ -f "$MVTEC_METRICS" && -f "$VISA_METRICS" ]]; then
+    echo "ANOMALYCLIP_WATCH_DONE $(date -Is)" >>"$LOG"
+    exit 0
   fi
   set -e
   sleep 900
