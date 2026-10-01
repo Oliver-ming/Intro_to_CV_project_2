@@ -24,7 +24,7 @@ def main() -> None:
     parser.add_argument("--out-dir", type=Path, default=ROOT / "outputs/part2/anomalyclip_heldout/mvtec")
     parser.add_argument("--dataset", default="mvtec")
     parser.add_argument("--categories", nargs="*", default=None)
-    parser.add_argument("--device", default="cuda:5")
+    parser.add_argument("--device", default="cuda:6")
     parser.add_argument("--image-size", type=int, default=518)
     parser.add_argument("--features-list", nargs="+", type=int, default=[24])
     parser.add_argument("--depth", type=int, default=9)
