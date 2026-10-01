@@ -15,7 +15,7 @@ from pathlib import Path
 
 from src.inspection.aggregate_seeds import SEED_SUMMARY_KEYS, aggregate_seed_metrics, mean_and_std
 from src.inspection.categories import MVTEC_CATEGORIES, MVTEC_OBJECTS, MVTEC_TEXTURES
-from src.inspection.efficiency import summarize_by_category
+from src.inspection.efficiency import bank_slot_table, summarize_by_category
 
 PART1_KEYS = (
     "image_auroc",
@@ -533,6 +533,7 @@ def write_comparison(
         "multiscale": collect_multiscale(multiscale_path) if multiscale_path else {"n_categories": 0, "per_category": {}, "mean": {}},
         "multiscale_seeds": collect_multiscale_seeds(multiscale_seed_paths or []),
         "efficiency": collect_efficiency(anomalydino_root) if anomalydino_root else [],
+        "memory_bank_slots": bank_slot_table(),
         "anomalydino_image": collect_partial_images(anomalydino_root, partial_image_root)
         if anomalydino_root is not None and partial_image_root is not None
         else [],

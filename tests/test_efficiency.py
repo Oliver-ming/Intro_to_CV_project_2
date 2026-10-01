@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from src.inspection.efficiency import memory_bank_slots, summarize_by_category, summarize_measurements
+from src.inspection.efficiency import bank_slot_table, memory_bank_slots, summarize_by_category, summarize_measurements
 
 
 class EfficiencyTest(unittest.TestCase):
@@ -26,6 +26,10 @@ class EfficiencyTest(unittest.TestCase):
 
     def test_one_shot_448_bank_has_eight_rotations(self) -> None:
         self.assertEqual(memory_bank_slots(1, 448), 8 * 32 * 32)
+
+    def test_eight_shot_672_is_eighteen_times_one_shot_448(self) -> None:
+        rows = {(row["shots"], row["resolution"]): row["slots"] for row in bank_slot_table()}
+        self.assertEqual(rows[(8, 672)], 18 * rows[(1, 448)])
 
     def test_bank_time_is_once_per_category(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

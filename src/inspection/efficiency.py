@@ -71,6 +71,18 @@ def peak_gpu_mb(device: str = "cuda:0") -> float | None:
     return torch.cuda.max_memory_allocated(device) / (1024 * 1024)
 
 
+def bank_slot_table(
+    shots: tuple[int, ...] = (1, 2, 4, 8),
+    resolutions: tuple[int, ...] = (448, 672),
+) -> list[dict[str, int]]:
+    """Upper bound on stored patch vectors before foreground masking."""
+    return [
+        {"shots": shot, "resolution": resolution, "slots": memory_bank_slots(shot, resolution)}
+        for resolution in resolutions
+        for shot in shots
+    ]
+
+
 def memory_bank_slots(shots: int, resolution: int, patch: int = 14, rotations: int = 8) -> int:
     """Upper bound on stored patch vectors before foreground masking.
 

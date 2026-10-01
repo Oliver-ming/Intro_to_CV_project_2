@@ -59,7 +59,7 @@ AnomalyDINO 的 MVTec、VisA 和 672 分辨率复现分别由 `scripts/run_anoma
 $PY -m src.inspection.collect_tables
 ```
 
-输出在 `outputs/tables/comparison.json`。Part 1 和 MVTec 上的 AnomalyDINO 同时给出 10 个物体和 5 个纹理的均值。AnomalyCLIP 的零样本结果出来之后，会和 448、1-shot 的种子均值并排，比较图像 AUROC、图像 AP 和像素 AUROC。AUPRO 不并排，因为两边的积分方式不同。验证尾图被判成 NG 的比例按分辨率和 shot 汇总，缺类别的种子先不算。其中的效率行只收录已经有 `metrics_seed` 的种子：逐图打分时间，以及每个类别只计一次的记忆库构建时间。图像级 AUROC 和 AP 会并进还没有官方文件的种子，种子间的均值只用每个种子都有的类别。多尺度如果有多个 `1shot_seed*_all15.json`，也会按种子取均值和样本标准差。
+输出在 `outputs/tables/comparison.json`。Part 1 和 MVTec 上的 AnomalyDINO 同时给出 10 个物体和 5 个纹理的均值。AnomalyCLIP 的零样本结果出来之后，会和 448、1-shot 的种子均值并排，比较图像 AUROC、图像 AP 和像素 AUROC。AUPRO 不并排，因为两边的积分方式不同。验证尾图被判成 NG 的比例按分辨率和 shot 汇总，缺类别的种子先不算。其中的效率行只收录已经有 `metrics_seed` 的种子：逐图打分时间，以及每个类别只计一次的记忆库构建时间。另外给出 1/2/4/8-shot 在 448 和 672 上、做前景掩码之前的 patch 上限。图像级 AUROC 和 AP 会并进还没有官方文件的种子，种子间的均值只用每个种子都有的类别。多尺度如果有多个 `1shot_seed*_all15.json`，也会按种子取均值和样本标准差。
 
 AnomalyDINO 官方流程不给阈值验证图打分。补打分用：
 
