@@ -373,6 +373,80 @@ def collect_anomalyclip(directory: Path) -> list[dict]:
     return rows
 
 
+_CONTRAST_PAIRS = (
+    ("image_auroc", "classification_AUROC", "image_auroc"),
+    ("image_ap", "classification_AP", "image_ap"),
+    ("pixel_auroc", "seg_AUROC", "pixel_auroc"),
+)
+
+
+def contrast_zero_shot(anomalydino_rows: list[dict], anomalyclip_rows: list[dict]) -> list[dict]:
+    """Place AnomalyCLIP's one zero-shot run next to AnomalyDINO 448 1-shot.
+
+    AnomalyDINO contributes the mean and sample standard deviation across seeds.
+    Pixel AUPRO is left out: AnomalyCLIP integrates 200 thresholds, while the
+    AnomalyDINO number is the official sorted sweep.
+    """
+    prompts = {}
+    for row in anomalyclip_rows:
+        categories = {}
+        for item in row.get("per_category") or []:
+            if isinstance(item, dict) and "category" in item and "image_auroc" in item:
+                categories[item["category"]] = item
+        if categories:
+            prompts[str(row.get("dataset", "")).casefold()] = categories
+    contrasts = []
+    for row in anomalydino_rows:
+        if row.get("shot") != 1 or row.get("preprocess") != "agnostic":
+            continue
+        if "448" not in str(row.get("model_resolution", "")):
+            continue
+        clip = prompts.get(str(row.get("dataset", "")).casefold())
+        if not clip:
+            continue
+        shared = sorted(set(row.get("per_category", {})) & set(clip))
+        per_category = {}
+        for category in shared:
+            metrics = {}
+            for name, dino_key, clip_key in _CONTRAST_PAIRS:
+                dino_metric = row["per_category"][category].get(dino_key)
+                if not isinstance(dino_metric, dict) or "mean" not in dino_metric or clip_key not in clip[category]:
+                    continue
+                clip_value = float(clip[category][clip_key])
+                metrics[name] = {
+                    "anomalydino_mean": float(dino_metric["mean"]),
+                    "anomalydino_std": float(dino_metric["std"]),
+                    "anomalydino_n": int(dino_metric["n"]),
+                    "anomalyclip": clip_value,
+                    "delta": clip_value - float(dino_metric["mean"]),
+                }
+            if metrics:
+                per_category[category] = metrics
+        if not per_category:
+            continue
+        means = {}
+        for name, _, _ in _CONTRAST_PAIRS:
+            deltas = [item[name]["delta"] for item in per_category.values() if name in item]
+            dino_values = [item[name]["anomalydino_mean"] for item in per_category.values() if name in item]
+            clip_values = [item[name]["anomalyclip"] for item in per_category.values() if name in item]
+            if deltas:
+                means[name] = {
+                    "anomalydino": _mean(dino_values),
+                    "anomalyclip": _mean(clip_values),
+                    "delta": _mean(deltas),
+                }
+        contrasts.append(
+            {
+                "dataset": row["dataset"],
+                "anomalydino": "448_1-shot",
+                "n_categories": len(per_category),
+                "mean": means,
+                "per_category": per_category,
+            }
+        )
+    return contrasts
+
+
 def write_comparison(
     out_path: Path,
     part1_dirs: dict[str, Path],
@@ -382,10 +456,13 @@ def write_comparison(
     partial_image_root: Path | None = None,
     multiscale_seed_paths: list[Path] | None = None,
 ) -> dict:
+    anomalydino = collect_anomalydino(anomalydino_root) if anomalydino_root else []
+    anomalyclip = collect_anomalyclip(anomalyclip_dir) if anomalyclip_dir else []
     table = {
         "part1": {name: collect_part1(path) for name, path in part1_dirs.items()},
-        "anomalydino": collect_anomalydino(anomalydino_root) if anomalydino_root else [],
-        "anomalyclip": collect_anomalyclip(anomalyclip_dir) if anomalyclip_dir else [],
+        "anomalydino": anomalydino,
+        "anomalyclip": anomalyclip,
+        "zero_shot_contrast": contrast_zero_shot(anomalydino, anomalyclip),
         "multiscale": collect_multiscale(multiscale_path) if multiscale_path else {"n_categories": 0, "per_category": {}, "mean": {}},
         "multiscale_seeds": collect_multiscale_seeds(multiscale_seed_paths or []),
         "efficiency": collect_efficiency(anomalydino_root) if anomalydino_root else [],
@@ -429,6 +506,7 @@ def main() -> None:
         "efficiency_rows": len(table["efficiency"]),
         "image_rows": len(table["anomalydino_image"]),
         "multiscale_seeds": table["multiscale_seeds"]["n_seeds"],
+        "zero_shot_contrast": len(table["zero_shot_contrast"]),
     }))
 
 

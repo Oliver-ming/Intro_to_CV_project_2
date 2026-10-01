@@ -15,6 +15,7 @@ from src.inspection.collect_tables import (
     collect_multiscale_seeds,
     collect_partial_images,
     collect_part1,
+    contrast_zero_shot,
     group_seed_means,
     write_comparison,
 )
@@ -70,6 +71,34 @@ class CollectTablesTest(unittest.TestCase):
         summary = group_seed_means(seeds, ("carpet", "grid", "leather", "tile", "wood"))
         self.assertEqual(summary["n_seeds"], 1)
         self.assertAlmostEqual(summary["metrics"]["classification_AUROC"]["mean"], 0.6)
+
+    def test_zero_shot_contrast_uses_the_448_one_shot_mean(self) -> None:
+        dino = [
+            {
+                "dataset": "MVTec",
+                "model_resolution": "dinov2_vits14_448",
+                "shot": 1,
+                "preprocess": "agnostic",
+                "per_category": {
+                    "bottle": {"classification_AUROC": {"mean": 0.9, "std": 0.01, "n": 3}, "classification_AP": {"mean": 0.8, "std": 0.0, "n": 3}},
+                },
+            },
+            {
+                "dataset": "MVTec",
+                "model_resolution": "dinov2_vits14_672",
+                "shot": 1,
+                "preprocess": "agnostic",
+                "per_category": {
+                    "bottle": {"classification_AUROC": {"mean": 0.1, "std": 0.0, "n": 1}},
+                },
+            },
+        ]
+        clip = [{"dataset": "mvtec", "per_category": [{"category": "bottle", "image_auroc": 0.7, "image_ap": 0.6}]}]
+        rows = contrast_zero_shot(dino, clip)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["n_categories"], 1)
+        self.assertAlmostEqual(rows[0]["per_category"]["bottle"]["image_auroc"]["delta"], -0.2)
+        self.assertAlmostEqual(rows[0]["mean"]["image_auroc"]["anomalyclip"], 0.7)
 
     def test_write_comparison_creates_the_table_file(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
