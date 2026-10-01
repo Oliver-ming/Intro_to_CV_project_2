@@ -8,6 +8,7 @@ from pathlib import Path
 
 import numpy as np
 
+from src.inspection.metrics import safe_ap, safe_auroc
 from src.inspection.threshold import decide, operating_threshold
 from src.part3.fuse_scores import fuse_detection_scores
 
@@ -36,10 +37,13 @@ def fuse_score_files(left_path: Path, right_path: Path, out_path: Path) -> dict:
         _scores(right, "validation", validation_keys),
     )
     threshold = operating_threshold(fused_validation)
+    labels = np.asarray([0 if "/good/" in key else 1 for key in test_keys])
+    values = np.asarray(fused_test, dtype=np.float64)
     payload = {
         "threshold": threshold,
         "threshold_rule": "mean_plus_3std_of_fused_validation_detection_scores",
         "detection_score": "mean_of_zscored_prompt_and_visual_scores",
+        "n_test": len(test_keys),
         "validation": {
             key: {
                 "detection_score": float(score),
@@ -55,6 +59,9 @@ def fuse_score_files(left_path: Path, right_path: Path, out_path: Path) -> dict:
             for key, score in zip(test_keys, fused_test)
         },
     }
+    if len(set(labels.tolist())) == 2:
+        payload["image_auroc"] = safe_auroc(labels, values)
+        payload["image_ap"] = safe_ap(labels, values)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     return payload

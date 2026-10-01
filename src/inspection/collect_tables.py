@@ -380,6 +380,28 @@ _CONTRAST_PAIRS = (
 )
 
 
+def collect_prompt_fusion(directory: Path) -> dict:
+    """Mean image metrics from fused prompt-visual files that already have them."""
+    per_category = {}
+    if directory.is_dir():
+        for path in sorted(directory.glob("*/*.json")):
+            if path.stem.endswith("_visual") or path.stem.endswith("_prompt"):
+                continue
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            if "image_auroc" not in payload or "image_ap" not in payload:
+                continue
+            per_category[path.stem] = {
+                "image_auroc": float(payload["image_auroc"]),
+                "image_ap": float(payload["image_ap"]),
+            }
+    mean = {}
+    for key in ("image_auroc", "image_ap"):
+        values = [row[key] for row in per_category.values()]
+        if values:
+            mean[key] = _mean(values)
+    return {"n_categories": len(per_category), "mean": mean, "per_category": per_category}
+
+
 def contrast_zero_shot(anomalydino_rows: list[dict], anomalyclip_rows: list[dict]) -> list[dict]:
     """Place AnomalyCLIP's one zero-shot run next to AnomalyDINO 448 1-shot.
 
@@ -455,6 +477,7 @@ def write_comparison(
     multiscale_path: Path | None = None,
     partial_image_root: Path | None = None,
     multiscale_seed_paths: list[Path] | None = None,
+    prompt_fusion_dir: Path | None = None,
 ) -> dict:
     anomalydino = collect_anomalydino(anomalydino_root) if anomalydino_root else []
     anomalyclip = collect_anomalyclip(anomalyclip_dir) if anomalyclip_dir else []
@@ -463,6 +486,7 @@ def write_comparison(
         "anomalydino": anomalydino,
         "anomalyclip": anomalyclip,
         "zero_shot_contrast": contrast_zero_shot(anomalydino, anomalyclip),
+        "prompt_fusion": collect_prompt_fusion(prompt_fusion_dir) if prompt_fusion_dir else {"n_categories": 0, "mean": {}, "per_category": {}},
         "multiscale": collect_multiscale(multiscale_path) if multiscale_path else {"n_categories": 0, "per_category": {}, "mean": {}},
         "multiscale_seeds": collect_multiscale_seeds(multiscale_seed_paths or []),
         "efficiency": collect_efficiency(anomalydino_root) if anomalydino_root else [],
@@ -496,6 +520,7 @@ def main() -> None:
         root / "outputs/part3/multiscale/1shot_seed0_all15.json",
         root / "outputs/part2/anomalydino_partial/image_scores",
         sorted((root / "outputs/part3/multiscale").glob("1shot_seed*_all15.json")),
+        root / "outputs/part3/prompt_fusion",
     )
     part1_counts = {name: row["n_categories"] for name, row in table["part1"].items()}
     print(json.dumps({
@@ -507,6 +532,7 @@ def main() -> None:
         "image_rows": len(table["anomalydino_image"]),
         "multiscale_seeds": table["multiscale_seeds"]["n_seeds"],
         "zero_shot_contrast": len(table["zero_shot_contrast"]),
+        "prompt_fusion": table["prompt_fusion"]["n_categories"],
     }))
 
 

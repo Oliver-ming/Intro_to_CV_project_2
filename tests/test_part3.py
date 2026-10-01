@@ -130,6 +130,33 @@ class ApplyScoreFusionTest(unittest.TestCase):
         self.assertIn("c", payload["test"])
         self.assertIn("d", payload["test"])
         self.assertGreater(payload["test"]["d"]["detection_score"], payload["test"]["c"]["detection_score"])
+        self.assertNotIn("image_auroc", payload)
+
+    def test_image_auroc_treats_good_paths_as_normal(self) -> None:
+        import json
+        import tempfile
+        from pathlib import Path
+
+        from src.part3.apply_score_fusion import fuse_score_files
+
+        def pack(values: dict[str, float]) -> dict:
+            return {key: {"detection_score": value} for key, value in values.items()}
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            left = {
+                "validation": pack({"bottle/train/good/000.png": 0.1, "bottle/train/good/001.png": 0.2}),
+                "test": pack({"bottle/test/good/000.png": 0.1, "bottle/test/broken/000.png": 3.0}),
+            }
+            right = {
+                "validation": pack({"bottle/train/good/000.png": 0.2, "bottle/train/good/001.png": 0.3}),
+                "test": pack({"bottle/test/good/000.png": 0.2, "bottle/test/broken/000.png": 4.0}),
+            }
+            (root / "left.json").write_text(json.dumps(left), encoding="utf-8")
+            (root / "right.json").write_text(json.dumps(right), encoding="utf-8")
+            payload = fuse_score_files(root / "left.json", root / "right.json", root / "fused.json")
+        self.assertEqual(payload["n_test"], 2)
+        self.assertAlmostEqual(payload["image_auroc"], 1.0)
 
 
 class TargetTest(unittest.TestCase):
