@@ -33,6 +33,8 @@ class CollectTablesTest(unittest.TestCase):
             self.assertEqual(summary["n_categories"], 1)
             self.assertAlmostEqual(summary["mean"]["image_auroc"], 0.8)
             self.assertNotIn("cable", summary["per_category"])
+            self.assertEqual(summary["groups"]["object"]["n_categories"], 1)
+            self.assertEqual(summary["groups"]["texture"]["n_categories"], 0)
 
     def test_anomalydino_seeds_are_averaged(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

@@ -14,7 +14,7 @@ import re
 from pathlib import Path
 
 from src.inspection.aggregate_seeds import SEED_SUMMARY_KEYS, aggregate_seed_metrics, mean_and_std
-from src.inspection.categories import MVTEC_CATEGORIES
+from src.inspection.categories import MVTEC_CATEGORIES, MVTEC_OBJECTS, MVTEC_TEXTURES
 from src.inspection.efficiency import summarize_by_category
 
 PART1_KEYS = (
@@ -43,6 +43,16 @@ def _mean(values: list[float]) -> float | None:
     return float(sum(finite) / len(finite))
 
 
+def _group_mean(per_category: dict, names: tuple[str, ...]) -> dict:
+    present = [category for category in names if category in per_category]
+    summary = {}
+    for key in PART1_KEYS:
+        values = [per_category[category][key] for category in present if key in per_category[category]]
+        if values:
+            summary[key] = _mean(values)
+    return {"n_categories": len(present), "mean": summary}
+
+
 def collect_part1(method_dir: Path) -> dict:
     per_category = {}
     for category in MVTEC_CATEGORIES:
@@ -56,7 +66,15 @@ def collect_part1(method_dir: Path) -> dict:
         present = [row[key] for row in per_category.values() if key in row]
         if present:
             summary[key] = _mean(present)
-    return {"per_category": per_category, "mean": summary, "n_categories": len(per_category)}
+    return {
+        "per_category": per_category,
+        "mean": summary,
+        "n_categories": len(per_category),
+        "groups": {
+            "texture": _group_mean(per_category, MVTEC_TEXTURES),
+            "object": _group_mean(per_category, MVTEC_OBJECTS),
+        },
+    }
 
 
 def per_category_from_seeds(seed_payloads: list[dict]) -> dict[str, dict[str, dict[str, float]]]:
