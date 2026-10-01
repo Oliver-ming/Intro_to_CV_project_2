@@ -17,7 +17,7 @@ if [[ ! -f "$VISA_CKPT" && ! -f "$MVTEC_CKPT" ]]; then
   exit 2
 fi
 cd "$ROOT/third_party/AnomalyCLIP"
-export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-5}"
+export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-6}"
 "$PY" - <<PY
 import sys
 sys.path.insert(0, "$ROOT")

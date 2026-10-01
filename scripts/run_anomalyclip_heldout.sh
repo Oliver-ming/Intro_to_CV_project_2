@@ -16,5 +16,5 @@ exec > >(tee -a "$LOG") 2>&1
 echo "ANOMALYCLIP_HELDOUT_START $(date -Is)"
 "$PY" scripts/score_anomalyclip_heldout.py \
   --checkpoint "$CKPT" \
-  --device "${DEVICE:-cuda:5}"
+  --device "${DEVICE:-cuda:6}"
 echo "ANOMALYCLIP_HELDOUT_DONE $(date -Is)"
