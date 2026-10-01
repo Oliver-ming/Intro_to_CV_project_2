@@ -15,6 +15,7 @@ from src.inspection.collect_tables import (
     collect_multiscale_seeds,
     collect_partial_images,
     collect_part1,
+    group_seed_means,
     write_comparison,
 )
 
@@ -53,6 +54,22 @@ class CollectTablesTest(unittest.TestCase):
             self.assertEqual(rows[0]["shot"], 1)
             self.assertAlmostEqual(rows[0]["metrics"]["mean_classification_au_roc"]["mean"], 0.93)
             self.assertAlmostEqual(rows[0]["per_category"]["bottle"]["classification_AUROC"]["mean"], 0.93)
+            self.assertEqual(rows[0]["groups"]["texture"]["n_seeds"], 0)
+
+    def test_group_means_skip_a_seed_missing_a_category(self) -> None:
+        seeds = [
+            {
+                "carpet": {"classification_AUROC": 1.0, "classification_AP": 1.0, "seg_AUROC": 1.0, "seg_AUPRO": 1.0},
+                "grid": {"classification_AUROC": 0.8, "classification_AP": 0.8, "seg_AUROC": 0.8, "seg_AUPRO": 0.8},
+                "leather": {"classification_AUROC": 0.6, "classification_AP": 0.6, "seg_AUROC": 0.6, "seg_AUPRO": 0.6},
+                "tile": {"classification_AUROC": 0.4, "classification_AP": 0.4, "seg_AUROC": 0.4, "seg_AUPRO": 0.4},
+                "wood": {"classification_AUROC": 0.2, "classification_AP": 0.2, "seg_AUROC": 0.2, "seg_AUPRO": 0.2},
+            },
+            {"carpet": {"classification_AUROC": 0.0, "classification_AP": 0.0, "seg_AUROC": 0.0, "seg_AUPRO": 0.0}},
+        ]
+        summary = group_seed_means(seeds, ("carpet", "grid", "leather", "tile", "wood"))
+        self.assertEqual(summary["n_seeds"], 1)
+        self.assertAlmostEqual(summary["metrics"]["classification_AUROC"]["mean"], 0.6)
 
     def test_write_comparison_creates_the_table_file(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

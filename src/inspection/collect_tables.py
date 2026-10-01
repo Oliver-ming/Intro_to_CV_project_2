@@ -99,6 +99,28 @@ def per_category_from_seeds(seed_payloads: list[dict]) -> dict[str, dict[str, di
     return summary
 
 
+def group_seed_means(seed_payloads: list[dict], names: tuple[str, ...]) -> dict:
+    """Mean each finished seed over a fixed category group, then across seeds.
+
+    A seed is included only when every category in the group is present.
+    """
+    per_seed = []
+    for payload in seed_payloads:
+        if not all(isinstance(payload.get(name), dict) and "classification_AUROC" in payload[name] for name in names):
+            continue
+        per_seed.append(
+            {
+                metric: sum(float(payload[name][metric]) for name in names) / len(names)
+                for metric in CATEGORY_METRICS
+            }
+        )
+    metrics = {}
+    if per_seed:
+        for metric in CATEGORY_METRICS:
+            metrics[metric] = mean_and_std([row[metric] for row in per_seed])
+    return {"n_seeds": len(per_seed), "n_categories": len(names), "metrics": metrics}
+
+
 def collect_anomalydino(results_root: Path) -> list[dict]:
     """One record per dataset, model resolution, shot, and preprocessing."""
     found: list[tuple[tuple, dict]] = []
@@ -130,6 +152,12 @@ def collect_anomalydino(results_root: Path) -> list[dict]:
                 "preprocess": preprocess,
                 "metrics": aggregate_seed_metrics(payloads),
                 "per_category": per_category_from_seeds(payloads),
+                "groups": {
+                    "object": group_seed_means(payloads, MVTEC_OBJECTS),
+                    "texture": group_seed_means(payloads, MVTEC_TEXTURES),
+                }
+                if dataset == "MVTec"
+                else {},
             }
         )
     return table
