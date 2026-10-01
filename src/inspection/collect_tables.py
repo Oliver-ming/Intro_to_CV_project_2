@@ -140,6 +140,49 @@ def collect_multiscale(path: Path) -> dict:
     return {"n_categories": len(per_category), "per_category": per_category, "mean": mean}
 
 
+def collect_multiscale_seeds(paths: list[Path]) -> dict:
+    """Mean and sample standard deviation across finished multi-scale seeds.
+
+    Seed-level means use only categories present in every file, so a partial
+    seed does not change the denominator.
+    """
+    per_seed = []
+    for path in paths:
+        if not path.is_file():
+            continue
+        item = collect_multiscale(path)
+        if item["n_categories"]:
+            per_seed.append(item)
+    if not per_seed:
+        return {"n_seeds": 0, "n_shared_categories": 0, "seed_means": {}, "per_category": {}}
+    shared = set.intersection(*(set(item["per_category"]) for item in per_seed))
+    if not shared:
+        return {"n_seeds": len(per_seed), "n_shared_categories": 0, "seed_means": {}, "per_category": {}}
+    per_category = {}
+    for category in sorted(shared):
+        per_category[category] = {}
+        for branch in FUSION_BRANCHES:
+            per_category[category][branch] = {}
+            for key in FUSION_KEYS:
+                values = [item["per_category"][category][branch][key] for item in per_seed]
+                per_category[category][branch][key] = mean_and_std(values)
+    seed_means = {}
+    for branch in FUSION_BRANCHES:
+        seed_means[branch] = {}
+        for key in FUSION_KEYS:
+            per_seed_mean = []
+            for item in per_seed:
+                values = [item["per_category"][category][branch][key] for category in shared]
+                per_seed_mean.append(sum(values) / len(values))
+            seed_means[branch][key] = mean_and_std(per_seed_mean)
+    return {
+        "n_seeds": len(per_seed),
+        "n_shared_categories": len(shared),
+        "seed_means": seed_means,
+        "per_category": per_category,
+    }
+
+
 def collect_efficiency(results_root: Path) -> list[dict]:
     """Timing rows for seeds whose official metrics file already exists.
 
@@ -291,12 +334,14 @@ def write_comparison(
     anomalyclip_dir: Path | None = None,
     multiscale_path: Path | None = None,
     partial_image_root: Path | None = None,
+    multiscale_seed_paths: list[Path] | None = None,
 ) -> dict:
     table = {
         "part1": {name: collect_part1(path) for name, path in part1_dirs.items()},
         "anomalydino": collect_anomalydino(anomalydino_root) if anomalydino_root else [],
         "anomalyclip": collect_anomalyclip(anomalyclip_dir) if anomalyclip_dir else [],
         "multiscale": collect_multiscale(multiscale_path) if multiscale_path else {"n_categories": 0, "per_category": {}, "mean": {}},
+        "multiscale_seeds": collect_multiscale_seeds(multiscale_seed_paths or []),
         "efficiency": collect_efficiency(anomalydino_root) if anomalydino_root else [],
         "anomalydino_image": collect_partial_images(anomalydino_root, partial_image_root)
         if anomalydino_root is not None and partial_image_root is not None
@@ -327,6 +372,7 @@ def main() -> None:
         root / "outputs/part2/anomalyclip",
         root / "outputs/part3/multiscale/1shot_seed0_all15.json",
         root / "outputs/part2/anomalydino_partial/image_scores",
+        sorted((root / "outputs/part3/multiscale").glob("1shot_seed*_all15.json")),
     )
     part1_counts = {name: row["n_categories"] for name, row in table["part1"].items()}
     print(json.dumps({
@@ -336,6 +382,7 @@ def main() -> None:
         "multiscale_categories": table["multiscale"]["n_categories"],
         "efficiency_rows": len(table["efficiency"]),
         "image_rows": len(table["anomalydino_image"]),
+        "multiscale_seeds": table["multiscale_seeds"]["n_seeds"],
     }))
 
 

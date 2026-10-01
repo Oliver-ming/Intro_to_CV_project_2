@@ -12,6 +12,7 @@ from src.inspection.collect_tables import (
     collect_anomalydino,
     collect_efficiency,
     collect_multiscale,
+    collect_multiscale_seeds,
     collect_partial_images,
     collect_part1,
     write_comparison,
@@ -149,6 +150,22 @@ class CollectTablesTest(unittest.TestCase):
             self.assertAlmostEqual(rows[0]["seed_means"]["image_auroc"]["mean"], 0.95)
             self.assertAlmostEqual(rows[0]["per_category"]["bottle"]["image_ap"]["mean"], 0.9)
             self.assertEqual(rows[0]["per_category"]["tile"]["image_auroc"]["n"], 1)
+
+    def test_multiscale_seeds_use_the_shared_categories(self) -> None:
+        def row(category: str, fused: float) -> dict:
+            branch = {"image_auroc": fused, "image_ap": fused, "pixel_auroc": fused, "pixel_ap": fused, "aupro": fused}
+            return {"category": category, "coarse_448": branch, "fine_672": branch, "fused": branch}
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            first = root / "seed0.json"
+            second = root / "seed1.json"
+            first.write_text(json.dumps([row("bottle", 0.4), row("cable", 0.8)]), encoding="utf-8")
+            second.write_text(json.dumps([row("bottle", 0.6)]), encoding="utf-8")
+            summary = collect_multiscale_seeds([first, second])
+            self.assertEqual(summary["n_shared_categories"], 1)
+            self.assertAlmostEqual(summary["seed_means"]["fused"]["image_auroc"]["mean"], 0.5)
+            self.assertEqual(summary["per_category"]["bottle"]["fused"]["image_auroc"]["n"], 2)
 
 
 if __name__ == "__main__":
