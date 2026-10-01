@@ -268,4 +268,5 @@
 - pcb4 种子 1 的正常图均值是 0.224（0.166 到 0.388），缺陷图均值是 0.228（0.165 到 0.345）。两组几乎叠在一起。种子 0 是 0.197 对 0.248，还有间隔。`bad/023` 的热力落在左侧接口，和掩码位置一致，分数 0.229；一张正常板 `good/0214` 分数 0.231，热力在芯片和接口上。VisA 没有阈值验证划分，这两张只标了检测分数，没有 OK/NG。图在 `outputs/demo/visa_pcb4_seed1_bad.png` 和 `visa_pcb4_seed1_good.png`。
 - 448、2-shot、种子 0 又齐了 metal_nut 和 pill，一共 9 类。这 9 类的图像 AUROC 均值，1-shot 种子 0 是 0.973，2-shot 是 0.978。变化超过 0.01 的只有 pill（0.915 到 0.959）和 cable（0.932 到 0.918）。还差 screw、tile、toothbrush、transistor、wood、zipper。
 - 672、1-shot、bottle 的三个种子图像 AUROC 是 1.000、0.997、0.995。这一类在两个分辨率上都停在 0.995 以上。
+- AnomalyCLIP 的 MVTec 测试在 08:41 开始，用的是 VisA 上训完的 `epoch_15.pth`，GPU 6。MVTec 提示还在 GPU 2 上训练，VisA 测试要等那份权重。
 - 672、1-shot、capsule 的种子 1 图像级 AUROC 是 0.825，种子 0 的官方数是 0.937。448 种子 1 是 0.820。同一张参考图在两个分辨率上都把整图检测拉低，换分辨率补不回来。
