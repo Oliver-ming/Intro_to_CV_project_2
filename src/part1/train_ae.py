@@ -17,6 +17,7 @@ from src.inspection.images import read_rgb, resize_rgb, to_float_rgb
 from src.inspection.reporting import write_scores
 from src.inspection.splits import load_split
 from src.part1.autoencoder import ConvAutoencoder, reconstruction_loss
+from src.part1.run_difference import write_category_metrics
 
 
 class ReferenceDataset(Dataset):
@@ -124,6 +125,7 @@ def run_category(
             "labels_used_for_threshold": False,
         },
     )
+    write_category_metrics(split, category_dir / "scores.json", data_root)
 
 
 def main() -> None:

@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import tempfile
 import unittest
 from pathlib import Path
 
 import numpy as np
 
-from src.inspection.splits import hold_out_validation, split_mvtec_normals
+from src.inspection.splits import build_mvtec_category, hold_out_validation, split_mvtec_normals
 from src.inspection.threshold import decide, mean_top1p, operating_threshold
 
 
@@ -30,6 +31,28 @@ class SplitTest(unittest.TestCase):
         self.assertEqual(validation, paths[-10:])
         self.assertTrue(set(prefix).isdisjoint(validation))
         self.assertTrue(set(prefix).issubset(pool))
+
+    def test_visa_defect_mask_is_the_stem_png(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            category = root / "candle"
+            (category / "train" / "good").mkdir(parents=True)
+            (category / "test" / "bad").mkdir(parents=True)
+            (category / "test" / "good").mkdir(parents=True)
+            (category / "ground_truth" / "bad").mkdir(parents=True)
+            for index in range(60):
+                (category / "train" / "good" / f"{index:04d}.JPG").write_bytes(b"x")
+            (category / "test" / "good" / "000.JPG").write_bytes(b"x")
+            (category / "test" / "bad" / "000.JPG").write_bytes(b"x")
+            (category / "ground_truth" / "bad" / "000.png").write_bytes(b"x")
+            payload = build_mvtec_category(root, "candle", dataset="visa")
+        self.assertEqual(payload["dataset"], "visa")
+        self.assertEqual(payload["protected_prefix_length"], 48)
+        self.assertEqual(payload["threshold_validation"], [f"candle/train/good/{index:04d}.JPG" for index in range(50, 60)])
+        bad = next(record for record in payload["test"] if record["label"] == "NG")
+        self.assertEqual(bad["mask"], "candle/ground_truth/bad/000.png")
+        good = next(record for record in payload["test"] if record["label"] == "OK")
+        self.assertIsNone(good["mask"])
 
 
 class ScoreTest(unittest.TestCase):

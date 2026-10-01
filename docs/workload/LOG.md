@@ -307,6 +307,7 @@
 - MVTec 提示在 10:10 写到 `epoch_9.pth`，训练进程还在。后面还有 6 轮。VisA 测试还没开始，检查脚本在等这份第 15 轮权重。
 - MVTec 提示的 15 轮在 11:22 写完，标记是 `ANOMALYCLIP_TRAIN_DONE`。用这份提示测 VisA 的结果在 12:13 写完，标记是 `ANOMALYCLIP_TEST_DONE`。12 类图像 AUROC 是 0.811，图像 AP 是 0.846，像素 AUROC 是 0.954。AnomalyDINO 三个种子的均值是 0.856、0.866、0.974，零样本分别低 0.045、0.020、0.020。差得最多的是 pcb2（0.613 对 0.829）、pcb3（0.618 对 0.814）、cashew（0.695 对 0.851）。检查脚本随后退出。
 - 2026-10-01 13:03 的作业 PDF 把必做数据改成只有 VisA。及格是 candle、capsules、cashew、chewinggum、fryum、pipe_fryum 这 6 类；高分是 12 类都做，并看物体域之间的差别，而不是再下一个数据集。MVTec AD 2 只留在阅读列表。磁盘上没有新的数据包，`data/wild_mouse/` 仍是空的。已经跑完的 MVTec 结果留作补充，课程主表改以 VisA 为准。记录在 `docs/adr/0002-visa-main-cross-dataset.md`。
+- Part 1 补到 VisA 全部 12 类。划分和 MVTec 一样：排序后的尾部最多 10 张做阈值验证，不占 1/2/4/8-shot 的三次前缀。VisA 掩码是 `<stem>.png`。差分只开一个 OpenCV 线程，避免再占正在跑的 AnomalyDINO。自编码器用空闲的 GPU 0。完成标记是 `PART1_VISA_DIFFERENCE_DONE` 和 `PART1_VISA_AE_DONE`。
 - 672 的验证尾图 180 份都在，完成标记是 `ANOMALYDINO_HELDOUT_672_DONE`。8-shot 补上种子 2 之后，三个种子把正常图判成 NG 的比例均值是 0.964，标准差 0.004。1/2/4-shot 仍是 0.958、0.962、0.960。
 - 记忆库的 patch 上限按 8 个旋转、掩码之前计算。448 的 1/2/4/8-shot 是 8192、16384、32768、65536。672 是 18432、36864、73728、147456。8-shot 672 是 1-shot 448 的 18 倍。纹理不做前景掩码，会接近这个上限。前面测到的逐图时间受 CPU 拥挤影响，不能当成这个倍数。
 - 672、1-shot、capsule 的种子 1 图像级 AUROC 是 0.825，种子 0 的官方数是 0.937。448 种子 1 是 0.820。同一张参考图在两个分辨率上都把整图检测拉低，换分辨率补不回来。

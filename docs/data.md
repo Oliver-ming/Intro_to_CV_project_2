@@ -34,7 +34,7 @@ wget -O data/archives/VisA_20220922.tar \
 data/VisA_pytorch/1cls/<category>/{train,test,ground_truth}/
 ```
 
-这是 AnomalyDINO 的默认路径。VisA 是主跨数据集。解压到 `data/visa_raw` 后运行：
+这是 AnomalyDINO 的默认路径。VisA 是课程唯一必做数据集。缺陷掩码是 `ground_truth/bad/<stem>.png`。Part 1 的划分在 `outputs/splits/visa`，尾部 10 张做阈值验证，前缀留给 1/2/4/8-shot。解压到 `data/visa_raw` 后运行：
 
 ```bash
 /home/zhangyuming/CV_project/env_cv/bin/python -m src.inspection.prepare_visa

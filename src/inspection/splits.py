@@ -11,7 +11,7 @@ import json
 import random
 from pathlib import Path
 
-from src.inspection.categories import IMAGE_SUFFIXES, MVTEC_CATEGORIES
+from src.inspection.categories import IMAGE_SUFFIXES, MVTEC_CATEGORIES, VISA_CATEGORIES
 
 OFFICIAL_SHOTS = (1, 2, 4, 8, 16)
 OFFICIAL_SEEDS = 3
@@ -83,8 +83,25 @@ def _relative(path: Path, root: Path) -> str:
     return path.relative_to(root).as_posix()
 
 
+def defect_mask_path(category_root: Path, defect_type: str, image_path: Path) -> Path:
+    """Mask next to a defect image.
+
+    MVTec names the mask ``<stem>_mask.png``. VisA names it ``<stem>.png``.
+    """
+    ground_truth = category_root / "ground_truth" / defect_type
+    candidates = [
+        ground_truth / f"{image_path.stem}_mask{image_path.suffix}",
+        ground_truth / f"{image_path.stem}_mask.png",
+        ground_truth / f"{image_path.stem}.png",
+    ]
+    for candidate in candidates:
+        if candidate.is_file():
+            return candidate
+    raise FileNotFoundError(f"missing mask for {image_path}")
+
+
 def build_mvtec_category(
-    data_root: Path, category: str, val_count: int = 10
+    data_root: Path, category: str, val_count: int = 10, dataset: str = "mvtec"
 ) -> dict:
     category_root = data_root / category
     train_good = list_images(category_root / "train" / "good")
@@ -106,19 +123,12 @@ def build_mvtec_category(
                 "mask": None,
             }
             if defect_type != "good":
-                mask_path = (
-                    category_root / "ground_truth" / defect_type / f"{image_path.stem}_mask{image_path.suffix}"
-                )
-                if not mask_path.is_file():
-                    png_mask = category_root / "ground_truth" / defect_type / f"{image_path.stem}_mask.png"
-                    mask_path = png_mask if png_mask.is_file() else mask_path
-                if not mask_path.is_file():
-                    raise FileNotFoundError(f"missing mask for {image_path}")
+                mask_path = defect_mask_path(category_root, defect_type, image_path)
                 record["mask"] = _relative(mask_path, data_root)
             test_records.append(record)
 
     return {
-        "dataset": "mvtec",
+        "dataset": dataset,
         "category": category,
         "reference_pool": [_relative(path, data_root) for path in pool],
         "threshold_validation": [_relative(path, data_root) for path in validation],
@@ -131,15 +141,29 @@ def build_mvtec_category(
     }
 
 
-def write_mvtec_splits(data_root: Path, out_dir: Path, val_count: int = 10) -> list[Path]:
+def write_category_splits(
+    data_root: Path,
+    out_dir: Path,
+    categories: list[str],
+    dataset: str,
+    val_count: int = 10,
+) -> list[Path]:
     out_dir.mkdir(parents=True, exist_ok=True)
     written = []
-    for category in MVTEC_CATEGORIES:
-        payload = build_mvtec_category(data_root, category, val_count=val_count)
+    for category in categories:
+        payload = build_mvtec_category(data_root, category, val_count=val_count, dataset=dataset)
         destination = out_dir / f"{category}.json"
         destination.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
         written.append(destination)
     return written
+
+
+def write_mvtec_splits(data_root: Path, out_dir: Path, val_count: int = 10) -> list[Path]:
+    return write_category_splits(data_root, out_dir, list(MVTEC_CATEGORIES), "mvtec", val_count=val_count)
+
+
+def write_visa_splits(data_root: Path, out_dir: Path, val_count: int = 10) -> list[Path]:
+    return write_category_splits(data_root, out_dir, list(VISA_CATEGORIES), "visa", val_count=val_count)
 
 
 def load_split(path: Path) -> dict:

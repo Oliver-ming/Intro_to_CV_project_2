@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 
+import cv2
 import numpy as np
 from tqdm import tqdm
 
@@ -78,6 +80,9 @@ def run_category(split_path: Path, data_root: Path, out_dir: Path, image_size: i
 
 
 def main() -> None:
+    thread_limit = os.environ.get("CV2_NUM_THREADS")
+    if thread_limit:
+        cv2.setNumThreads(int(thread_limit))
     parser = argparse.ArgumentParser()
     parser.add_argument("--data-root", type=Path, default=Path("data/mvtec_anomaly_detection"))
     parser.add_argument("--split-dir", type=Path, default=Path("outputs/splits/mvtec"))
