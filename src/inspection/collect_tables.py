@@ -36,6 +36,45 @@ CATEGORY_METRICS = (
 _SHOT_DIR = re.compile(r"^(?P<shot>\d+)-shot_preprocess=(?P<preprocess>.+)$")
 
 
+def collect_heldout_alarm_rates(resolution_root: Path, categories: tuple[str, ...] = tuple(MVTEC_CATEGORIES)) -> list[dict]:
+    """Fraction of normal validation images marked NG, for complete seeds only.
+
+    The decision is the one stored in each ``scores.json``. A seed is skipped
+    until every category in ``categories`` has a file.
+    """
+    rows = []
+    if not resolution_root.is_dir():
+        return rows
+    for shot_dir in sorted(resolution_root.glob("*-shot"), key=lambda path: int(path.name.split("-", 1)[0])):
+        seed_means = []
+        for seed_dir in sorted(shot_dir.glob("seed=*")):
+            rates = []
+            complete = True
+            for category in categories:
+                path = seed_dir / category / "scores.json"
+                if not path.is_file():
+                    complete = False
+                    break
+                validation = json.loads(path.read_text(encoding="utf-8")).get("validation", {})
+                decisions = [row.get("decision") for row in validation.values() if isinstance(row, dict)]
+                if not decisions:
+                    complete = False
+                    break
+                rates.append(sum(decision == "NG" for decision in decisions) / len(decisions))
+            if complete and rates:
+                seed_means.append(sum(rates) / len(rates))
+        if not seed_means:
+            continue
+        rows.append(
+            {
+                "shot": int(shot_dir.name.split("-", 1)[0]),
+                "n_categories": len(categories),
+                "false_positive_rate": mean_and_std(seed_means),
+            }
+        )
+    return rows
+
+
 def _mean(values: list[float]) -> float | None:
     finite = [value for value in values if value == value]
     if not finite:
@@ -478,6 +517,7 @@ def write_comparison(
     partial_image_root: Path | None = None,
     multiscale_seed_paths: list[Path] | None = None,
     prompt_fusion_dir: Path | None = None,
+    heldout_roots: dict[str, Path] | None = None,
 ) -> dict:
     anomalydino = collect_anomalydino(anomalydino_root) if anomalydino_root else []
     anomalyclip = collect_anomalyclip(anomalyclip_dir) if anomalyclip_dir else []
@@ -487,6 +527,9 @@ def write_comparison(
         "anomalyclip": anomalyclip,
         "zero_shot_contrast": contrast_zero_shot(anomalydino, anomalyclip),
         "prompt_fusion": collect_prompt_fusion(prompt_fusion_dir) if prompt_fusion_dir else {"n_categories": 0, "mean": {}, "per_category": {}},
+        "heldout_alarm": {
+            name: collect_heldout_alarm_rates(path) for name, path in (heldout_roots or {}).items()
+        },
         "multiscale": collect_multiscale(multiscale_path) if multiscale_path else {"n_categories": 0, "per_category": {}, "mean": {}},
         "multiscale_seeds": collect_multiscale_seeds(multiscale_seed_paths or []),
         "efficiency": collect_efficiency(anomalydino_root) if anomalydino_root else [],
@@ -521,6 +564,10 @@ def main() -> None:
         root / "outputs/part2/anomalydino_partial/image_scores",
         sorted((root / "outputs/part3/multiscale").glob("1shot_seed*_all15.json")),
         root / "outputs/part3/prompt_fusion",
+        {
+            "448": root / "outputs/part2/anomalydino_heldout/448",
+            "672": root / "outputs/part2/anomalydino_heldout/672",
+        },
     )
     part1_counts = {name: row["n_categories"] for name, row in table["part1"].items()}
     print(json.dumps({

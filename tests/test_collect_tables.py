@@ -8,6 +8,7 @@ import unittest
 from pathlib import Path
 
 from src.inspection.collect_tables import (
+    collect_heldout_alarm_rates,
     collect_anomalyclip,
     collect_anomalydino,
     collect_efficiency,
@@ -99,6 +100,22 @@ class CollectTablesTest(unittest.TestCase):
         self.assertEqual(rows[0]["n_categories"], 1)
         self.assertAlmostEqual(rows[0]["per_category"]["bottle"]["image_auroc"]["delta"], -0.2)
         self.assertAlmostEqual(rows[0]["mean"]["image_auroc"]["anomalyclip"], 0.7)
+
+    def test_heldout_alarm_rate_skips_an_incomplete_seed(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            ready = root / "1-shot" / "seed=0" / "bottle"
+            ready.mkdir(parents=True)
+            (ready / "scores.json").write_text(
+                json.dumps({"validation": {"a": {"decision": "NG"}, "b": {"decision": "OK"}}}),
+                encoding="utf-8",
+            )
+            missing = root / "1-shot" / "seed=1" / "bottle"
+            missing.mkdir(parents=True)
+            rows = collect_heldout_alarm_rates(root, ("bottle",))
+            self.assertEqual(len(rows), 1)
+            self.assertEqual(rows[0]["false_positive_rate"]["n"], 1)
+            self.assertAlmostEqual(rows[0]["false_positive_rate"]["mean"], 0.5)
 
     def test_write_comparison_creates_the_table_file(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
