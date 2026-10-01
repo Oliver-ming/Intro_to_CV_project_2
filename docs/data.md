@@ -42,7 +42,9 @@ data/VisA_pytorch/1cls/<category>/{train,test,ground_truth}/
 
 ## MVTec AD 2
 
-只在 Part 3 的压力测试里使用公开测试集，不进主表，也不提交私有榜。放到 `data/mvtec_ad_2/`。公开测试图的官方布局是：
+2026-10-01 的作业说明不再要求下载它。它只出现在阅读列表里。本地没有 `data/mvtec_ad_2/`，也不再补下官方归档。下面的目录布局留给阅读，当前实验不读这些路径。
+
+公开测试图的官方布局是：
 
 ```text
 data/mvtec_ad_2/<category>/test_public/good/
