@@ -56,19 +56,27 @@ data/mvtec_ad_2/<category>/test_public/ground_truth/bad/<stem>_mask.png
 
 ## 自采检验集
 
-照片放到 `data/wild_mouse/`。文件名随意，程序按文件名排序后，用种子 0 从受控正常图里抽 10 张做阈值验证图，其余做参考池。
+照片在 `CV资料/Project2/`，用符号链接放进 `data/wild_mouse/`。程序按文件名排序后，用种子 0 从受控正常图里抽 10 张做阈值验证图，其余做参考池。
+
+实际拍到的和原来的 80 张清单不一样：
+
+| 来源文件夹 | 链接到 | 张数 | 说明 |
+| --- | --- | --- | --- |
+| 完好受控条件 | `controlled/good/` | 40 | 8 次快门，每次 5 张，同一机位 |
+| 背景改变 | `shift_background/good/` | 10 | 只换了桌面 |
+| 白色印记 | `controlled/ink/` | 15 | 白色印记，当作色笔这一类 |
+| 胶带 | `controlled/tape_or_missing/` | 10 | 一小块胶带 |
+| 划痕 | `controlled/scratch/` | 9 | 另一台相机，分辨率和机位都不同 |
+
+没有只改光照的一组，所以 `shift_light/good/` 是空的。缺陷图没有掩码，像素级指标先不算。
 
 ```text
 data/wild_mouse/
-  controlled/good/                 # 30 张无缺陷
-  shift_light/good/                # 10 张，只改光照
-  shift_background/good/           # 10 张，只改背景
-  controlled/scratch/              # 10 张
-  controlled/ink/                  # 10 张
-  controlled/tape_or_missing/      # 10 张
-  masks/scratch/                   # 与缺陷图同名的二值掩码
-  masks/ink/
-  masks/tape_or_missing/
+  controlled/good/                 # 40 张，链到完好受控条件
+  shift_background/good/           # 10 张，链到背景改变
+  controlled/scratch/              # 9 张，链到划痕
+  controlled/ink/                  # 15 张，链到白色印记
+  controlled/tape_or_missing/      # 10 张，链到胶带
 ```
 
-掩码为同尺寸 PNG，白色是缺陷，黑色是其余区域。正常图不要掩码。三种缺陷是细划痕、可洗色笔印、贴胶带或拿掉脚垫。
+掩码仍按同尺寸 PNG 来：白色是缺陷，黑色是其余区域。正常图不要掩码。这批照片里还没有掩码。
