@@ -1,6 +1,6 @@
 # 少样本工业外观异常检测
 
-作者：Yuming Zhang（学号 50025933），Jiayang Liu（学号 50027216）。
+作者：Yuming Zhang（学号 50025933，1756882063@qq.com），Jiayang Liu（学号 50027216）。
 
 只用无缺陷参考图判断测试图是否异常，并给出像素级热力图。课程要求见本地 PDF，不进 git。已经定下的术语在 `CONTEXT.md`，决定在 `docs/adr/`。
 
